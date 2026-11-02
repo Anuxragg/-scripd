@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookCover } from "@/features/books/BookCover";
 import { useBook } from "@/features/books/hooks";
@@ -14,6 +12,7 @@ import {
 } from "@/features/reads/hooks";
 import { BookReviewsSection } from "@/features/reviews/BookReviewsSection";
 import { AuthorAvatar } from "@/features/books/AuthorAvatar";
+import { WhereToReadSection } from "@/features/books/WhereToReadSection";
 
 interface CatalogBook {
   id: string;
@@ -281,9 +280,6 @@ export function BookDetailPage({
 
   const pages = apiBook?.isbn13 ? "384 pages" : (knownMatch?.pages ?? "Standard Edition");
 
-  const publisher = knownMatch?.publisher ?? "Open Library Catalog";
-  const language = knownMatch?.language ?? "English";
-
   const coverURL = apiBook?.cover_url || knownMatch?.coverURL;
 
   const description = useMemo(() => {
@@ -361,9 +357,6 @@ export function BookDetailPage({
     );
   }
 
-  const openLibraryKey = apiBook?.open_library_key || knownMatch?.openLibraryKey || "OL-CATALOG";
-  const isbnDisplay = apiBook?.isbn13 || knownMatch?.isbn13;
-
   return (
     <main className="min-h-screen bg-[#0a0c10] text-white selection:bg-[#9333ea]/30 selection:text-white pb-36">
       {/* Hero Content: Book Cover + Details & Actions */}
@@ -419,11 +412,41 @@ export function BookDetailPage({
                   </div>
                 )}
               </div>
+
+              {/* Writer & Contributors Section (Aligned with Overview) */}
+              <div className="mt-7 space-y-3">
+                <h2 className="book-overview-heading text-[20px] font-medium leading-[28px] text-[rgb(226,226,226)] tracking-normal">
+                  {authors.length > 1 ? "Authors & Contributors" : "Writer"}
+                </h2>
+                <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-2 no-scrollbar">
+                  {authors.map((authorName, index) => {
+                    const role = index === 0 ? "Author" : "Contributor";
+
+                    return (
+                      <div
+                        key={`${authorName}-${index}`}
+                        className="flex flex-col items-center shrink-0 w-20 sm:w-24 text-center group"
+                      >
+                        <AuthorAvatar name={authorName} olid={apiBook?.author_keys?.[index]} />
+                        <span
+                          className="font-semibold text-xs sm:text-sm text-white mt-2 truncate w-full"
+                          title={authorName}
+                        >
+                          {authorName}
+                        </span>
+                        <span className="text-[11px] text-zinc-400 truncate w-full mt-0.5">
+                          {role}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Mark as Read & Action Box */}
-          <div className="w-full max-w-[280px]">
+          {/* Right Column: Rating Box & Where To Read */}
+          <div className="w-full max-w-[280px] space-y-4">
             <div className="w-full rounded-2xl border border-[#4d5c6b] bg-[#5B6C7D] p-5 shadow-xl space-y-3.5">
               {/* 5-Star Letterboxd Rating Panel */}
               <div
@@ -565,85 +588,18 @@ export function BookDetailPage({
                 </button>
               </div>
             </div>
+
+            {/* Where to Read & Listen Section (Matches 280px width) */}
+            <WhereToReadSection title={title} authorNames={authorNames} />
           </div>
         </div>
       </div>
 
-      {/* 3. Main Content Sections Grid (Writer & Contributors, Publishing, Reviews, Sidebar) */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mt-14 pb-24">
+      {/* 3. Reader Reviews & Discussions */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mt-12 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 items-start">
-          {/* Left Column (Authors, Details, Reviews) */}
+          {/* Left Column (Reviews) */}
           <div className="space-y-12">
-            {/* Writer & Contributors Section - Real Author(s) */}
-            <section>
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-5">
-                {authors.length > 1 ? "Authors & Contributors" : "Writer"}
-              </h2>
-              <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
-                {authors.map((authorName, index) => {
-                  const role = index === 0 ? "Author" : "Contributor";
-
-                  return (
-                    <div
-                      key={`${authorName}-${index}`}
-                      className="flex flex-col items-center shrink-0 w-24 sm:w-28 text-center group"
-                    >
-                      <AuthorAvatar name={authorName} olid={apiBook?.author_keys?.[index]} />
-                      <span
-                        className="font-semibold text-xs sm:text-sm text-white mt-2.5 truncate w-full"
-                        title={authorName}
-                      >
-                        {authorName}
-                      </span>
-                      <span className="text-[11px] text-zinc-400 truncate w-full mt-0.5">
-                        {role}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Publishing & Edition Details Section */}
-            <section className="border-t border-white/5 pt-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-4">
-                Publishing &amp; Details
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
-                <div className="rounded-xl border border-white/5 bg-[#12151c] p-3.5">
-                  <span className="text-zinc-500 block text-xs">Author</span>
-                  <span className="font-semibold text-white mt-1 block truncate">
-                    {authorNames}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-[#12151c] p-3.5">
-                  <span className="text-zinc-500 block text-xs">Publisher</span>
-                  <span className="font-semibold text-white mt-1 block truncate">{publisher}</span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-[#12151c] p-3.5">
-                  <span className="text-zinc-500 block text-xs">Language</span>
-                  <span className="font-semibold text-white mt-1 block truncate">{language}</span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-[#12151c] p-3.5">
-                  <span className="text-zinc-500 block text-xs">Edition</span>
-                  <span className="font-semibold text-white mt-1 block truncate">
-                    {isbnDisplay ? `ISBN-${isbnDisplay.slice(-4)}` : "Standard"}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-[#12151c] p-3.5">
-                  <span className="text-zinc-500 block text-xs">Length</span>
-                  <span className="font-semibold text-white mt-1 block truncate">{pages}</span>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-[#12151c] p-3.5">
-                  <span className="text-zinc-500 block text-xs">Catalog Key</span>
-                  <span className="font-semibold text-white mt-1 block truncate font-mono text-xs">
-                    {openLibraryKey}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Reader Reviews & Discussions */}
             <section className="border-t border-white/5 pt-10">
               <BookReviewsSection
                 bookID={bookID}
@@ -655,77 +611,6 @@ export function BookDetailPage({
                 }
               />
             </section>
-          </div>
-
-          {/* Right Column (Users' Collections) */}
-          <div className="w-full max-w-[280px] space-y-6">
-            {/* Users' Collections Card */}
-            <div className="w-full max-w-[280px] rounded-2xl border border-white/10 bg-[#12151c] p-5 shadow-xl space-y-4">
-              <h3 className="text-sm font-bold text-white tracking-tight">Featured Collections</h3>
-
-              <div className="space-y-3">
-                <Link
-                  href="/library"
-                  className="flex items-center gap-3.5 rounded-xl bg-transparent p-2.5 transition hover:bg-white/5 group"
-                >
-                  <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-[#242b38]">
-                    {coverURL ? (
-                      <Image
-                        src={coverURL}
-                        alt="Essential Literature"
-                        fill
-                        unoptimized
-                        className="object-cover group-hover:scale-105 transition"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-gradient-to-tr from-purple-900 to-indigo-800" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-white text-xs sm:text-sm truncate group-hover:text-[#c084fc] transition">
-                      Essential Classics
-                    </h4>
-                    <span className="text-[11px] text-zinc-400 mt-0.5 block">
-                      181 Items • 122 Likes
-                    </span>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/library"
-                  className="flex items-center gap-3.5 rounded-xl bg-transparent p-2.5 transition hover:bg-white/5 group"
-                >
-                  <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-[#242b38]">
-                    <div className="h-full w-full bg-gradient-to-tr from-amber-700 to-red-900" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-white text-xs sm:text-sm truncate group-hover:text-[#c084fc] transition">
-                      Must-Reads of the Decade
-                    </h4>
-                    <span className="text-[11px] text-zinc-400 mt-0.5 block">
-                      67 Items • 89 Likes
-                    </span>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/library"
-                  className="flex items-center gap-3.5 rounded-xl bg-transparent p-2.5 transition hover:bg-white/5 group"
-                >
-                  <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-[#242b38]">
-                    <div className="h-full w-full bg-gradient-to-tr from-emerald-800 to-cyan-900" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-white text-xs sm:text-sm truncate group-hover:text-[#c084fc] transition">
-                      Reader Favorites
-                    </h4>
-                    <span className="text-[11px] text-zinc-400 mt-0.5 block">
-                      45 Items • 140 Likes
-                    </span>
-                  </div>
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       </div>
