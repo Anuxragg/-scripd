@@ -540,9 +540,9 @@ export function SiteHeader({ theme = "light" }: { theme?: "dark" | "light" }) {
                       setBrowseMenuOpen(false);
                       setSearchOpen(false);
                     }}
-                    className={`flex items-center gap-2 px-2.5 py-1 text-left transition-colors focus:outline-none w-[145px] ${
+                    className={`flex items-center gap-2 px-2.5 py-1 text-left transition-colors focus:outline-none w-36.25 ${
                       userMenuOpen
-                        ? "bg-[#5b6c7d] rounded-t-md border-t border-x border-[#4d5c6b] border-b border-black/15 z-50 relative"
+                        ? "bg-[#5b6c7d] rounded-t-md border-t border-x border-[#4d5c6b] border-b border-b-black/15 z-50 relative"
                         : "rounded-md hover:bg-white/5 border border-transparent"
                     }`}
                     aria-expanded={userMenuOpen}
@@ -584,7 +584,7 @@ export function SiteHeader({ theme = "light" }: { theme?: "dark" | "light" }) {
                   </button>
 
                   {userMenuOpen && (
-                    <div className="absolute top-full left-0 w-[145px] rounded-b-md bg-[#5b6c7d] pb-1 text-xs shadow-2xl z-50 overflow-hidden border-b border-x border-[#4d5c6b] normal-case tracking-normal">
+                    <div className="absolute top-full left-0 w-36.25 rounded-b-md bg-[#5b6c7d] pb-1 text-xs shadow-2xl z-50 overflow-hidden border-b border-x border-[#4d5c6b] normal-case tracking-normal">
                       <div className="flex flex-col">
                         {[
                           { label: "Home", href: "/feed" },

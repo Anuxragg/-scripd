@@ -33,7 +33,7 @@ const KNOWN_AUTHOR_PHOTOS: Record<string, string> = {
   "min jin lee":
     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Min_Jin_Lee_by_Elena_Seibert.jpg/330px-Min_Jin_Lee_by_Elena_Seibert.jpg",
   "gabrielle zevin":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Gabrielle_Zevin_at_the_2023_Texas_Book_Festival.jpg/330px-Gabrielle_Zevin_at_the_2023_Texas_Book_Festival.jpg",
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Gabrielle_Zevin_2024.jpg/500px-Gabrielle_Zevin_2024.jpg",
   "c.s. lewis":
     "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/C.s.lewis3.JPG/330px-C.s.lewis3.JPG",
   "leo tolstoy":
@@ -50,10 +50,45 @@ const KNOWN_AUTHOR_PHOTOS: Record<string, string> = {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Stephen_King%2C_Comicon.jpg/330px-Stephen_King%2C_Comicon.jpg",
   "oscar wilde":
     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Oscar_Wilde_Sarony.jpg/330px-Oscar_Wilde_Sarony.jpg",
+  "sally rooney":
+    "https://upload.wikimedia.org/wikipedia/commons/8/8e/Sally_Rooney_%28cropped%29.png",
+  "colleen hoover":
+    "https://upload.wikimedia.org/wikipedia/commons/f/fa/Colleen_Hoover_Video_Call.png",
+  "brandon sanderson":
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Brandon_Sanderson_at_Lucca_Comics_%26_Games_2016.JPG/440px-Brandon_Sanderson_at_Lucca_Comics_%26_Games_2016.JPG",
 };
 
 // In-memory cache to avoid duplicate network calls
 const authorPhotoCache = new Map<string, string | null>();
+
+async function searchWikipediaThumbnail(query: string): Promise<string | null> {
+  try {
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(
+      query,
+    )}&gsrlimit=5&prop=pageimages&pithumbsize=400&format=json&origin=*`;
+    const res = await fetch(searchUrl);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const pages = data.query?.pages;
+    if (!pages) return null;
+
+    const sortedPages = Object.values(pages) as Array<{
+      index?: number;
+      thumbnail?: { source?: string };
+    }>;
+    sortedPages.sort((a, b) => (a.index ?? 99) - (b.index ?? 99));
+
+    for (const page of sortedPages) {
+      const thumb = page.thumbnail?.source;
+      if (typeof thumb === "string" && thumb.startsWith("http")) {
+        return thumb;
+      }
+    }
+  } catch {
+    // Continue
+  }
+  return null;
+}
 
 async function fetchAuthorPhoto(name: string, olid?: string): Promise<string | null> {
   const normalized = name.trim().toLowerCase();
@@ -75,14 +110,30 @@ async function fetchAuthorPhoto(name: string, olid?: string): Promise<string | n
         return olPhotoUrl;
       }
     } catch {
-      // Continue to Wikipedia fallback
+      // Continue to next tier
     }
   }
 
-  // 2. Query Wikipedia REST API (free, open, no auth required, high-res portraits)
+  // 2. Query Wikipedia Search API with "author" qualifier
+  const thumbWithAuthor = await searchWikipediaThumbnail(`${name.trim()} author`);
+  if (thumbWithAuthor) {
+    authorPhotoCache.set(normalized, thumbWithAuthor);
+    return thumbWithAuthor;
+  }
+
+  // 3. Query Wikipedia Search API with exact name
+  const thumbByName = await searchWikipediaThumbnail(name.trim());
+  if (thumbByName) {
+    authorPhotoCache.set(normalized, thumbByName);
+    return thumbByName;
+  }
+
+  // 4. Fallback: Direct Wikipedia REST summary lookup
   try {
     const wikiName = encodeURIComponent(name.trim().replace(/\s+/g, "_"));
-    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiName}`);
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${wikiName}?origin=*`,
+    );
     if (res.ok) {
       const data = await res.json();
       const photo = data.thumbnail?.source || data.originalimage?.source;
