@@ -215,10 +215,6 @@ function MarqueeColumn({ books, animationClass }: { books: BookItem[]; animation
 export function BookMarqueeColumns() {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#0a0b0d] flex items-center justify-center p-3 sm:p-4">
-      {/* Top & bottom subtle gradient fades */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#0a0b0d] via-[#0a0b0d]/75 to-transparent z-10" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0a0b0d] via-[#0a0b0d]/75 to-transparent z-10" />
-
       {/* 3 Vertical Columns - exactly 212px wide for a physical 4.7 cm measurement */}
       <div className="grid h-full grid-cols-[repeat(3,minmax(0,212px))] justify-center gap-4">
         {/* Column 1: UPWARD */}
