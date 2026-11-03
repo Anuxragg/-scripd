@@ -171,25 +171,25 @@ function BookCard({ book }: { book: BookItem }) {
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className="group relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-[#141517] shadow-xl border border-white/5 transition duration-300 hover:scale-[1.02] hover:border-white/20 select-none">
+    <div className="group relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-[#141517] shadow-xl border border-white/5 transition duration-300 hover:scale-[1.02] hover:border-white/20 select-none">
       {!hasError ? (
         <Image
           src={book.coverUrl}
           alt={book.title}
           fill
-          sizes="(max-width: 1024px) 30vw, 180px"
+          sizes="212px"
           className="object-cover transition duration-500 group-hover:contrast-105"
           onError={() => setHasError(true)}
           unoptimized
         />
       ) : (
         <div
-          className={`flex h-full w-full flex-col justify-between p-4 bg-gradient-to-b ${book.fallbackBg} text-white`}
+          className={`flex h-full w-full flex-col justify-between p-3 sm:p-4 bg-gradient-to-b ${book.fallbackBg} text-white`}
         >
           <div className="h-2 w-8 rounded-full bg-white/20" />
           <div>
-            <h4 className="font-serif text-sm font-bold leading-tight">{book.title}</h4>
-            <p className="mt-1 text-xs text-white/60">{book.author}</p>
+            <h4 className="font-serif text-xs sm:text-sm font-bold leading-tight">{book.title}</h4>
+            <p className="mt-1 text-[11px] text-white/60">{book.author}</p>
           </div>
         </div>
       )}
@@ -202,8 +202,8 @@ function MarqueeColumn({ books, animationClass }: { books: BookItem[]; animation
   const duplicated = [...books, ...books];
 
   return (
-    <div className="relative h-full flex-1 overflow-hidden">
-      <div className={`flex flex-col gap-4 sm:gap-6 will-change-transform ${animationClass}`}>
+    <div className="relative h-full w-[212px] max-w-full overflow-hidden">
+      <div className={`flex flex-col gap-4 will-change-transform ${animationClass}`}>
         {duplicated.map((book, idx) => (
           <BookCard key={`${book.id}-${idx}`} book={book} />
         ))}
@@ -214,9 +214,13 @@ function MarqueeColumn({ books, animationClass }: { books: BookItem[]; animation
 
 export function BookMarqueeColumns() {
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#0a0b0d] p-3 sm:p-6 lg:p-8">
-      {/* 3 Vertical Columns */}
-      <div className="grid h-full grid-cols-3 gap-3 sm:gap-5 lg:gap-6">
+    <div className="relative h-screen w-full overflow-hidden bg-[#0a0b0d] flex items-center justify-center p-3 sm:p-4">
+      {/* Top & bottom subtle gradient fades */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#0a0b0d] via-[#0a0b0d]/75 to-transparent z-10" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0a0b0d] via-[#0a0b0d]/75 to-transparent z-10" />
+
+      {/* 3 Vertical Columns - exactly 212px wide for a physical 4.7 cm measurement */}
+      <div className="grid h-full grid-cols-[repeat(3,minmax(0,212px))] justify-center gap-4">
         {/* Column 1: UPWARD */}
         <MarqueeColumn books={COLUMN_1_BOOKS} animationClass="animate-marquee-up-1" />
 

@@ -171,7 +171,7 @@ export function ResetPasswordForm() {
 
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <div>
-          <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1.5">
+          <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1.5">
             New Password
           </label>
           <div className="relative">
@@ -245,7 +245,7 @@ export function ResetPasswordForm() {
         </div>
 
         <div>
-          <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1.5">
+          <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1.5">
             Confirm New Password
           </label>
           <div className="relative">
@@ -305,7 +305,7 @@ export function ResetPasswordForm() {
         <button
           type="submit"
           disabled={resetMutation.isPending}
-          className="mt-2 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-sm font-bold tracking-wide shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
+          className="mt-2 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
         >
           {resetMutation.isPending ? "Updating password…" : "Reset Password"}
         </button>

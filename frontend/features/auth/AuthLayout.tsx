@@ -20,7 +20,7 @@ export function AuthLayout({
   return (
     <div className="relative flex min-h-screen w-full bg-[#0a0b0d] text-white overflow-hidden">
       {/* LEFT / SIDE AREA: 3 Vertical Moving Columns of Book Covers */}
-      <div className="hidden lg:block lg:w-[50%] xl:w-[55%] h-screen sticky top-0 overflow-hidden border-r border-white/5">
+      <div className="hidden lg:block lg:w-[48%] xl:w-[50%] h-screen sticky top-0 overflow-hidden border-r border-white/5">
         <BookMarqueeColumns />
       </div>
 
@@ -31,7 +31,7 @@ export function AuthLayout({
           <div className="h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[130px]" />
         </div>
 
-        <div className="w-full max-w-md relative z-10 flex flex-col items-center">
+        <div className="w-full max-w-[380px] relative z-10 flex flex-col items-center">
           {/* Brand Logo Header (matching screenshot format) */}
           <Link
             href="/"
@@ -58,16 +58,16 @@ export function AuthLayout({
           </Link>
 
           {/* White Credentials Card */}
-          <div className="w-full rounded-3xl bg-white p-7 sm:p-9 shadow-2xl text-gray-900 border border-gray-100">
+          <div className="w-full rounded-lg bg-white p-6 sm:p-7 shadow-2xl text-gray-900 border border-gray-100">
             {children}
           </div>
 
           {/* Under Card Link */}
-          <p className="mt-6 text-center text-sm text-gray-400">
+          <p className="mt-6 text-center text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif]">
             {footerText}{" "}
             <Link
               href={footerLinkHref}
-              className="font-bold text-white hover:text-purple-300 transition underline underline-offset-4"
+              className="text-[16px] font-medium leading-[24px] text-white hover:underline underline-offset-4 transition"
             >
               {footerLinkText}
             </Link>
