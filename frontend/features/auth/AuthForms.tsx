@@ -135,13 +135,13 @@ export function LoginForm() {
 
   return (
     <div className="w-full">
-      <h2 className="text-center text-2xl sm:text-[26px] font-bold text-gray-900 tracking-tight mb-6">
+      <h2 className="text-center text-[24px] font-semibold leading-[32px] text-[#0f1014] font-['Inter',sans-serif] mb-6">
         Login
       </h2>
 
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <div>
-          <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1.5">
+          <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1.5">
             Username or Email
           </label>
           <input
@@ -162,7 +162,7 @@ export function LoginForm() {
         </div>
 
         <div>
-          <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1.5">
+          <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1.5">
             Password
           </label>
           <div className="relative">
@@ -226,7 +226,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="mt-2 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-sm font-bold tracking-wide shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
+          className="mt-2 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
         >
           {loginMutation.isPending ? "Logging in…" : "Login"}
         </button>
@@ -234,7 +234,7 @@ export function LoginForm() {
         <div className="pt-2 text-center">
           <Link
             href="/forgot-password"
-            className="text-xs text-gray-500 hover:text-purple-600 underline underline-offset-2 transition"
+            className="text-[14px] font-normal leading-[20px] text-[#0f1014] font-['Inter',sans-serif] hover:underline underline-offset-2 transition"
           >
             Forgot Password?
           </Link>
@@ -401,7 +401,7 @@ export function RegisterForm() {
       {step === 1 && (
         <form className="space-y-4" onSubmit={handleCheckUsername} noValidate>
           <div>
-            <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1.5">
+            <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1.5">
               Select Username
             </label>
             <input
@@ -430,7 +430,7 @@ export function RegisterForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-3 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-sm font-bold tracking-wide shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
+            className="mt-3 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
           >
             {isLoading ? "Checking…" : "Check"}
           </button>
@@ -442,7 +442,7 @@ export function RegisterForm() {
         <form className="space-y-3.5" onSubmit={handleGetOtp} noValidate>
           {/* Readonly Username */}
           <div>
-            <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1">
+            <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1">
               Username
             </label>
             <input
@@ -455,7 +455,7 @@ export function RegisterForm() {
 
           {/* Email */}
           <div>
-            <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1">
+            <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1">
               Email
             </label>
             <input
@@ -472,7 +472,7 @@ export function RegisterForm() {
           {/* First Name & Last Name (2 Columns) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1">
+              <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1">
                 First Name
               </label>
               <input
@@ -484,7 +484,7 @@ export function RegisterForm() {
               />
             </div>
             <div>
-              <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1">
+              <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1">
                 Last Name
               </label>
               <input
@@ -499,7 +499,7 @@ export function RegisterForm() {
 
           {/* Password with Eye Toggle & Strength Meter */}
           <div>
-            <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1">
+            <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1">
               Password
             </label>
             <div className="relative">
@@ -576,7 +576,7 @@ export function RegisterForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-3 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-sm font-bold tracking-wide shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
+            className="mt-3 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
           >
             {isLoading ? "Sending code…" : "Get OTP"}
           </button>
@@ -635,7 +635,7 @@ export function RegisterForm() {
             type="button"
             onClick={() => handleVerifyOtpAndRegister()}
             disabled={isLoading || otp.replace(/\s/g, "").length < 6}
-            className="w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-sm font-bold tracking-wide shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
+            className="w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
           >
             {isLoading ? "Verifying…" : "Complete Registration"}
           </button>

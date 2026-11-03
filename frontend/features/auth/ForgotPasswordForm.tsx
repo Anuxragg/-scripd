@@ -105,7 +105,7 @@ export function ForgotPasswordForm() {
 
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <div>
-          <label className="block text-xs sm:text-[13px] font-semibold text-gray-800 mb-1.5">
+          <label className="block text-[14px] font-medium leading-[20px] text-[#0f1014] font-['Inter',sans-serif] mb-1.5">
             Email Address
           </label>
           <input
@@ -134,7 +134,7 @@ export function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={forgotMutation.isPending}
-          className="mt-2 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-sm font-bold tracking-wide shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
+          className="mt-2 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
         >
           {forgotMutation.isPending ? "Sending reset link…" : "Send Reset Link"}
         </button>
@@ -142,7 +142,7 @@ export function ForgotPasswordForm() {
         <div className="pt-2 text-center">
           <Link
             href="/login"
-            className="text-xs text-gray-500 hover:text-purple-600 underline underline-offset-2 transition"
+            className="text-[14px] font-normal leading-[20px] text-[#0f1014] font-['Inter',sans-serif] hover:underline underline-offset-2 transition"
           >
             ← Back to Login
           </Link>
