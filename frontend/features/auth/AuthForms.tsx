@@ -149,7 +149,7 @@ export function LoginForm() {
             type="text"
             autoComplete="username"
             placeholder="Enter your username or email"
-            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 sm:py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/15"
+            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 sm:py-3 font-['Inter',sans-serif] text-[16px] font-normal leading-[24px] text-[#0f1014] placeholder:font-['Inter',sans-serif] placeholder:text-[16px] placeholder:font-normal placeholder:leading-[24px] placeholder:text-[#0f1014] outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/15"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -171,7 +171,7 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="Enter your password"
-              className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 sm:py-3 pr-11 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/15"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 sm:py-3 pr-11 font-['Inter',sans-serif] text-[16px] font-normal leading-[24px] text-[#0f1014] placeholder:font-['Inter',sans-serif] placeholder:text-[16px] placeholder:font-normal placeholder:leading-[24px] placeholder:text-[#0f1014] outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/15"
             />
             <button
               type="button"

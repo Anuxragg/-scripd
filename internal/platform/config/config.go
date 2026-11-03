@@ -123,7 +123,7 @@ func Load() (Config, error) {
 		DatabaseURL:        databaseURL,
 		DBHost:             dbHost,
 		DBPort:             dbPort,
-		DBName:             dbName,
+		DBName:             dbName, 
 		DBUser:             dbUser,
 		DBPassword:         dbPassword,
 		DBSSLMode:          dbSSLMode,
