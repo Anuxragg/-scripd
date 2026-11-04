@@ -152,7 +152,7 @@ export function SiteHeader({ theme = "light" }: { theme?: "dark" | "light" }) {
           {/* Letterboxd-style 3-circle logo + Scripd Wordmark */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-white transition hover:opacity-90"
+            className="-ml-2 flex items-center gap-2.5 text-white transition hover:opacity-90 sm:-ml-3"
             aria-label="Scripd home"
           >
             <div className="flex -space-x-1.5 items-center" aria-hidden="true">
@@ -166,7 +166,7 @@ export function SiteHeader({ theme = "light" }: { theme?: "dark" | "light" }) {
           {/* Nav Items */}
           <nav
             aria-label="Main navigation"
-            className="flex items-center gap-6 sm:gap-8 uppercase tracking-wider"
+            className="flex items-center gap-5 sm:gap-7 uppercase tracking-wider"
           >
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-5 sm:gap-7">
@@ -185,7 +185,7 @@ export function SiteHeader({ theme = "light" }: { theme?: "dark" | "light" }) {
             </div>
 
             {/* Right Action Icons & Profile with increased spacing */}
-            <div className="flex items-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-2 sm:gap-5">
               {/* Bento Grid Categories & Collections Button */}
               <div className="relative" ref={browseMenuRef}>
                 <button

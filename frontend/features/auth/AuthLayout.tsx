@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BookMarqueeColumns } from "@/features/auth/BookMarqueeColumns";
@@ -20,7 +18,7 @@ export function AuthLayout({
   return (
     <div className="relative flex min-h-screen w-full bg-[#0a0b0d] text-white overflow-hidden">
       {/* LEFT / SIDE AREA: 3 Vertical Moving Columns of Book Covers */}
-      <div className="hidden lg:block lg:w-[48%] xl:w-[50%] h-screen sticky top-0 overflow-hidden border-r border-white/5">
+      <div className="hidden lg:block lg:w-[48%] xl:w-[50%] h-screen sticky top-0 overflow-hidden">
         <BookMarqueeColumns />
       </div>
 

@@ -13,6 +13,7 @@ import {
 import { BookReviewsSection } from "@/features/reviews/BookReviewsSection";
 import { AuthorAvatar } from "@/features/books/AuthorAvatar";
 import { WhereToReadSection } from "@/features/books/WhereToReadSection";
+import { useClientStorage } from "@/lib/useClientStorage";
 
 interface CatalogBook {
   id: string;
@@ -160,7 +161,8 @@ export function BookDetailPage({
   );
 
   const [localStatus, setLocalStatus] = useState<"none" | "read" | "want_to_read">("none");
-  const [localRating, setLocalRating] = useState<number | null>(null);
+  const ratingStorageKey = `scripd:book-rating:${userQuery.data?.id ?? "guest"}:${bookID}`;
+  const [localRating, setLocalRating] = useClientStorage<number | null>(ratingStorageKey, null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   const activeRating = activeEntry?.rating ?? localRating;
@@ -483,7 +485,7 @@ export function BookDetailPage({
                         {/* Invisible Left Half Click/Hover Target (0.5 star) */}
                         <button
                           type="button"
-                          disabled={isBusy}
+                          disabled={isBusy || userQuery.isLoading}
                           aria-label={`Rate ${starIndex - 0.5} stars`}
                           onMouseEnter={() => setHoverRating(starIndex - 0.5)}
                           onClick={() => handleRate(starIndex - 0.5)}
@@ -492,7 +494,7 @@ export function BookDetailPage({
                         {/* Invisible Right Half Click/Hover Target (1.0 star) */}
                         <button
                           type="button"
-                          disabled={isBusy}
+                          disabled={isBusy || userQuery.isLoading}
                           aria-label={`Rate ${starIndex} stars`}
                           onMouseEnter={() => setHoverRating(starIndex)}
                           onClick={() => handleRate(starIndex)}
