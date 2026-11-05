@@ -205,3 +205,31 @@ func TestPasswordResetEndpoints(t *testing.T) {
 		t.Fatalf("reset-password status = %d, want %d: %s", resetRes.Code, http.StatusOK, resetRes.Body.String())
 	}
 }
+
+func TestLoginSupportsSameSiteNoneOption(t *testing.T) {
+	stub := &stubAuthService{
+		result: service.SessionResult{
+			AccessToken:      "access-token",
+			RefreshToken:     "refresh-token",
+			AccessExpiresAt:  time.Now().Add(15 * time.Minute),
+			RefreshExpiresAt: time.Now().Add(24 * time.Hour),
+		},
+	}
+	router := chi.NewRouter()
+	New(stub, false, []string{"https://app.example"}, zerolog.Nop(), WithSameSite(http.SameSiteNoneMode)).RegisterRoutes(router)
+
+	request := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"identifier":"reader_one","password":"password"}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Origin", "https://app.example")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d: %s", response.Code, http.StatusOK, response.Body.String())
+	}
+	for _, cookie := range response.Result().Cookies() {
+		if !cookie.Secure || cookie.SameSite != http.SameSiteNoneMode {
+			t.Errorf("cookie %q expected secure with SameSite=None: %#v", cookie.Name, cookie)
+		}
+	}
+}

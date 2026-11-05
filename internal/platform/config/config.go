@@ -32,6 +32,7 @@ type Config struct {
 	SMTPRequireTLS     bool
 	GoogleBooksAPIKey  string
 	CORSAllowedOrigins []string
+	CookieSameSite     string
 	RateLimitRequests  int
 	RateLimitWindow    time.Duration
 	ShutdownTimeout    time.Duration
@@ -118,8 +119,48 @@ func Load() (Config, error) {
 		httpAddr = ":" + httpAddr
 	}
 
+	appEnv := env("APP_ENV", "development")
+	webBaseURL := env("WEB_BASE_URL", "http://localhost:3000")
+	corsOrigins := splitCSV(env("CORS_ALLOWED_ORIGINS", "http://localhost:3000"))
+	if parsedWebURL, err := url.Parse(webBaseURL); err == nil && (parsedWebURL.Scheme == "http" || parsedWebURL.Scheme == "https") && parsedWebURL.Host != "" {
+		webOrigin := fmt.Sprintf("%s://%s", parsedWebURL.Scheme, parsedWebURL.Host)
+		if webOrigin != "*" {
+			found := false
+			for _, origin := range corsOrigins {
+				if strings.EqualFold(origin, webOrigin) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				corsOrigins = append(corsOrigins, webOrigin)
+			}
+		}
+	}
+	if appEnv == "production" {
+		foundVercel := false
+		for _, origin := range corsOrigins {
+			if strings.EqualFold(origin, "https://scripd.vercel.app") {
+				foundVercel = true
+				break
+			}
+		}
+		if !foundVercel {
+			corsOrigins = append(corsOrigins, "https://scripd.vercel.app")
+		}
+	}
+
+	cookieSameSite := strings.ToLower(strings.TrimSpace(os.Getenv("COOKIE_SAME_SITE")))
+	if cookieSameSite == "" {
+		if appEnv == "production" {
+			cookieSameSite = "none"
+		} else {
+			cookieSameSite = "lax"
+		}
+	}
+
 	cfg := Config{
-		Environment:        env("APP_ENV", "development"),
+		Environment:        appEnv,
 		HTTPAddress:        httpAddr,
 		DatabaseURL:        databaseURL,
 		DBHost:             dbHost,
@@ -129,7 +170,7 @@ func Load() (Config, error) {
 		DBPassword:         dbPassword,
 		DBSSLMode:          dbSSLMode,
 		JWTAccessSecret:    os.Getenv("JWT_ACCESS_SECRET"),
-		WebBaseURL:         env("WEB_BASE_URL", "http://localhost:3000"),
+		WebBaseURL:         webBaseURL,
 		SMTPHost:           env("SMTP_HOST", "localhost"),
 		SMTPPort:           smtpPort,
 		SMTPUsername:       os.Getenv("SMTP_USERNAME"),
@@ -137,7 +178,8 @@ func Load() (Config, error) {
 		SMTPFrom:           env("SMTP_FROM", "Scripd <noreply@scripd.local>"),
 		SMTPRequireTLS:     smtpRequireTLS,
 		GoogleBooksAPIKey:  strings.TrimSpace(os.Getenv("GOOGLE_BOOKS_API_KEY")),
-		CORSAllowedOrigins: splitCSV(env("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
+		CORSAllowedOrigins: corsOrigins,
+		CookieSameSite:     cookieSameSite,
 		RateLimitRequests:  rateLimitRequests,
 		RateLimitWindow:    rateLimitWindow,
 		ShutdownTimeout:    shutdownTimeout,
@@ -194,6 +236,11 @@ func validate(cfg Config) error {
 	}{cfg.Environment, cfg.HTTPAddress, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBUser, cfg.DBSSLMode, cfg.CORSAllowedOrigins, cfg.RateLimitRequests, cfg.RateLimitWindow, cfg.ShutdownTimeout, cfg.ReadinessTimeout}); err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
+	switch strings.ToLower(cfg.CookieSameSite) {
+	case "none", "lax", "strict", "":
+	default:
+		return fmt.Errorf("invalid configuration: COOKIE_SAME_SITE must be 'none', 'lax', or 'strict'")
+	}
 	if len(cfg.JWTAccessSecret) < 32 {
 		return fmt.Errorf("invalid configuration: JWT_ACCESS_SECRET must contain at least 32 bytes")
 	}
@@ -204,8 +251,11 @@ func validate(cfg Config) error {
 		if cfg.WebBaseURL == "http://localhost:3000" || webURL.Scheme != "https" {
 			return fmt.Errorf("invalid production configuration: WEB_BASE_URL must use HTTPS and point to the deployed web application")
 		}
-		if cfg.SMTPHost == "localhost" || cfg.SMTPUsername == "" || cfg.SMTPPassword == "" || !cfg.SMTPRequireTLS {
-			return fmt.Errorf("invalid production configuration: authenticated SMTP with TLS is required")
+		skipSMTP := strings.EqualFold(os.Getenv("SKIP_SMTP_CHECK"), "true") || strings.EqualFold(os.Getenv("DISABLE_SMTP_CHECK"), "true")
+		if !skipSMTP && (cfg.SMTPHost != "localhost" || cfg.SMTPUsername != "") {
+			if cfg.SMTPUsername == "" || cfg.SMTPPassword == "" || !cfg.SMTPRequireTLS {
+				return fmt.Errorf("invalid production configuration: authenticated SMTP with TLS is required")
+			}
 		}
 	}
 	return nil
@@ -221,9 +271,23 @@ func env(key, fallback string) string {
 func splitCSV(value string) []string {
 	parts := strings.Split(value, ",")
 	origins := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
 	for _, part := range parts {
-		if origin := strings.TrimSpace(part); origin != "" {
-			origins = append(origins, origin)
+		origin := strings.TrimSpace(part)
+		origin = strings.Trim(origin, `"'`)
+		origin = strings.TrimRight(origin, "/")
+		if origin != "" {
+			if !strings.HasPrefix(origin, "http://") && !strings.HasPrefix(origin, "https://") && origin != "*" {
+				if strings.HasPrefix(origin, "localhost") || strings.HasPrefix(origin, "127.0.0.1") {
+					origin = "http://" + origin
+				} else {
+					origin = "https://" + origin
+				}
+			}
+			if _, exists := seen[origin]; !exists {
+				seen[origin] = struct{}{}
+				origins = append(origins, origin)
+			}
 		}
 	}
 	return origins

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -75,7 +76,16 @@ func run() error {
 		authservice.WithEmailVerification(verificationMailer, cfg.WebBaseURL),
 		authservice.WithPasswordReset(verificationMailer, cfg.WebBaseURL),
 	)
-	authHTTP := authhandler.New(authSvc, cfg.Environment == "production", cfg.CORSAllowedOrigins, log)
+	var authOpts []authhandler.Option
+	switch strings.ToLower(cfg.CookieSameSite) {
+	case "none":
+		authOpts = append(authOpts, authhandler.WithSameSite(http.SameSiteNoneMode))
+	case "lax":
+		authOpts = append(authOpts, authhandler.WithSameSite(http.SameSiteLaxMode))
+	case "strict":
+		authOpts = append(authOpts, authhandler.WithSameSite(http.SameSiteStrictMode))
+	}
+	authHTTP := authhandler.New(authSvc, cfg.Environment == "production", cfg.CORSAllowedOrigins, log, authOpts...)
 	sessionMiddleware := authmiddleware.New(authSvc, cfg.CORSAllowedOrigins, log)
 	bookRepo := bookrepository.NewPostgres(pool)
 	bookCatalog := bookprovider.NewOpenLibrary(nil, "")

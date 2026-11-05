@@ -8,7 +8,7 @@ import (
 )
 
 func TestSplitCSVTrimsAndDropsEmptyValues(t *testing.T) {
-	require.Equal(t, []string{"https://app.example", "http://localhost:3000"}, splitCSV(" https://app.example, ,http://localhost:3000 "))
+	require.Equal(t, []string{"https://app.example", "http://localhost:3000", "https://scripd.vercel.app"}, splitCSV(` "https://app.example/", ,'http://localhost:3000', scripd.vercel.app `))
 }
 
 func TestValidateRejectsWildcardOriginInProduction(t *testing.T) {

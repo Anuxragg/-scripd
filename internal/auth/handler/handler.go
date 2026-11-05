@@ -44,10 +44,19 @@ type emailVerificationService interface {
 	ResendEmailVerification(context.Context, string) error
 }
 
+type Option func(*Handler)
+
+func WithSameSite(sameSite http.SameSite) Option {
+	return func(h *Handler) {
+		h.sameSite = sameSite
+	}
+}
+
 type Handler struct {
 	service       authService
 	secureCookies bool
 	allowedOrigin map[string]struct{}
+	sameSite      http.SameSite
 	log           zerolog.Logger
 }
 
@@ -85,12 +94,22 @@ type resetPasswordRequest struct {
 	NewPassword string `json:"new_password"`
 }
 
-func New(service authService, secureCookies bool, origins []string, log zerolog.Logger) *Handler {
+func New(service authService, secureCookies bool, origins []string, log zerolog.Logger, opts ...Option) *Handler {
 	allowedOrigins := make(map[string]struct{}, len(origins))
 	for _, origin := range origins {
 		allowedOrigins[origin] = struct{}{}
 	}
-	return &Handler{service: service, secureCookies: secureCookies, allowedOrigin: allowedOrigins, log: log}
+	h := &Handler{
+		service:       service,
+		secureCookies: secureCookies,
+		allowedOrigin: allowedOrigins,
+		sameSite:      http.SameSiteStrictMode,
+		log:           log,
+	}
+	for _, opt := range opts {
+		opt(h)
+	}
+	return h
 }
 
 func (h *Handler) RegisterRoutes(router chi.Router) {
@@ -378,19 +397,27 @@ func (h *Handler) checkOrigin(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func (h *Handler) setSessionCookies(w http.ResponseWriter, result service.SessionResult) {
+	secure := h.secureCookies
+	if h.sameSite == http.SameSiteNoneMode {
+		secure = true
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name: accessCookieName, Value: result.AccessToken, Path: "/", Expires: result.AccessExpiresAt,
-		MaxAge: cookieMaxAge(result.AccessExpiresAt), HttpOnly: true, Secure: h.secureCookies,
-		SameSite: http.SameSiteStrictMode,
+		MaxAge: cookieMaxAge(result.AccessExpiresAt), HttpOnly: true, Secure: secure,
+		SameSite: h.sameSite,
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name: refreshCookieName, Value: result.RefreshToken, Path: refreshCookiePath, Expires: result.RefreshExpiresAt,
-		MaxAge: cookieMaxAge(result.RefreshExpiresAt), HttpOnly: true, Secure: h.secureCookies,
-		SameSite: http.SameSiteStrictMode,
+		MaxAge: cookieMaxAge(result.RefreshExpiresAt), HttpOnly: true, Secure: secure,
+		SameSite: h.sameSite,
 	})
 }
 
 func (h *Handler) clearSessionCookies(w http.ResponseWriter) {
+	secure := h.secureCookies
+	if h.sameSite == http.SameSiteNoneMode {
+		secure = true
+	}
 	expires := time.Unix(0, 0)
 	for _, cookie := range []*http.Cookie{
 		{Name: accessCookieName, Path: "/"},
@@ -400,8 +427,8 @@ func (h *Handler) clearSessionCookies(w http.ResponseWriter) {
 		cookie.Expires = expires
 		cookie.MaxAge = -1
 		cookie.HttpOnly = true
-		cookie.Secure = h.secureCookies
-		cookie.SameSite = http.SameSiteStrictMode
+		cookie.Secure = secure
+		cookie.SameSite = h.sameSite
 		http.SetCookie(w, cookie)
 	}
 }
