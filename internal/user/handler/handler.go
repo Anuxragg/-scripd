@@ -28,6 +28,8 @@ type userService interface {
 	GetProfile(ctx context.Context, username string) (user.PublicProfile, error)
 	GetStats(ctx context.Context, username string) (user.ProfileStats, error)
 	UpdateProfile(ctx context.Context, userID string, input user.UpdateProfileInput) (user.PublicProfile, error)
+	AddFavoriteBook(ctx context.Context, userID string, input user.FavoriteBookInput) (user.FavoriteBook, error)
+	RemoveFavoriteBook(ctx context.Context, userID, openLibraryKey string) error
 }
 
 type Handler struct {
@@ -37,9 +39,18 @@ type Handler struct {
 }
 
 type updateProfileRequest struct {
+	Username    *string `json:"username"`
 	DisplayName *string `json:"display_name"`
 	Bio         *string `json:"bio"`
 	AvatarURL   *string `json:"avatar_url"`
+}
+
+type addFavoriteBookRequest struct {
+	OpenLibraryKey string   `json:"open_library_key"`
+	Title          string   `json:"title"`
+	Authors        []string `json:"authors"`
+	CoverURL       string   `json:"cover_url"`
+	PublishedYear  *int     `json:"published_year"`
 }
 
 func New(service userService, requireUser func(http.Handler) http.Handler, log zerolog.Logger) *Handler {
@@ -59,6 +70,8 @@ func (h *Handler) RegisterRoutes(router chi.Router) {
 
 	// Protected routes
 	router.With(h.requireUser, mutationLimit).Patch("/users/me", h.UpdateProfile)
+	router.With(h.requireUser, mutationLimit).Post("/users/me/favorites", h.AddFavoriteBook)
+	router.With(h.requireUser, mutationLimit).Delete("/users/me/favorites", h.RemoveFavoriteBook)
 }
 
 func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +121,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	profile, err := h.service.UpdateProfile(ctx, userID, user.UpdateProfileInput{
+		Username:    req.Username,
 		DisplayName: req.DisplayName,
 		Bio:         req.Bio,
 		AvatarURL:   req.AvatarURL,
@@ -120,8 +134,62 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, http.StatusOK, profile)
 }
 
+func (h *Handler) AddFavoriteBook(w http.ResponseWriter, r *http.Request) {
+	userID, ok := authmiddleware.UserID(r.Context())
+	if !ok {
+		writeUnauthenticated(w, r)
+		return
+	}
+
+	var req addFavoriteBookRequest
+	if !decodeJSON(w, r, &req) {
+		writeInvalidRequest(w, r)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), userRequestTimeout)
+	defer cancel()
+	favorite, err := h.service.AddFavoriteBook(ctx, userID, user.FavoriteBookInput{
+		OpenLibraryKey: req.OpenLibraryKey,
+		Title:          req.Title,
+		Authors:        req.Authors,
+		CoverURL:       req.CoverURL,
+		PublishedYear:  req.PublishedYear,
+	})
+	if err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	response.WriteJSON(w, http.StatusCreated, favorite)
+}
+
+func (h *Handler) RemoveFavoriteBook(w http.ResponseWriter, r *http.Request) {
+	userID, ok := authmiddleware.UserID(r.Context())
+	if !ok {
+		writeUnauthenticated(w, r)
+		return
+	}
+	keys := r.URL.Query()["open_library_key"]
+	if len(keys) != 1 || strings.TrimSpace(keys[0]) == "" {
+		writeInvalidRequest(w, r)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), userRequestTimeout)
+	defer cancel()
+	if err := h.service.RemoveFavoriteBook(ctx, userID, keys[0]); err != nil {
+		h.writeError(w, r, err)
+		return
+	}
+	response.WriteJSON(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 func (h *Handler) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, user.ErrUsernameInUse):
+		response.WriteError(w, r, http.StatusConflict, "username_unavailable", "that username is already taken")
+	case errors.Is(err, user.ErrFavoriteLimitReached):
+		response.WriteError(w, r, http.StatusConflict, "favorite_limit_reached", "you can choose up to four favorite books")
 	case errors.Is(err, user.ErrInvalidInput):
 		response.WriteError(w, r, http.StatusBadRequest, "invalid_request", "profile data is invalid")
 	case errors.Is(err, user.ErrNotFound):

@@ -194,6 +194,7 @@ function LibraryEntry({
           className="aspect-[2/3] w-24 rounded-xl"
           coverURL={entry.book.cover_url}
           title={entry.book.title}
+          authors={entry.book.authors}
         />
       </Link>
       <div className="min-w-0">

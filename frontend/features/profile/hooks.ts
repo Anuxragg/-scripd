@@ -5,10 +5,14 @@ import {
   getProfile,
   getProfileStats,
   updateProfile,
+  addFavoriteBook,
+  removeFavoriteBook,
   getFollowStatus,
   followUser,
   unfollowUser,
+  type PublicProfile,
   type UpdateProfileInput,
+  type AddFavoriteBookInput,
 } from "@/features/profile/api";
 
 export function useProfile(username: string) {
@@ -86,6 +90,44 @@ export function useUpdateProfile(username?: string) {
           updatedProfile,
         );
       }
+    },
+  });
+}
+
+export function useAddFavoriteBook(username: string) {
+  const queryClient = useQueryClient();
+  const profileKey = ["users", "profile", username.toLowerCase()] as const;
+  return useMutation({
+    mutationFn: (input: AddFavoriteBookInput) => addFavoriteBook(input),
+    onSuccess: async (favorite) => {
+      queryClient.setQueryData<PublicProfile>(profileKey, (current) => {
+        if (!current) return current;
+        const favoriteBooks = current.favorite_books.filter(
+          (book) => book.open_library_key !== favorite.open_library_key,
+        );
+        return {
+          ...current,
+          favorite_books: [...favoriteBooks, favorite].sort((a, b) => a.position - b.position),
+        };
+      });
+      await queryClient.invalidateQueries({ queryKey: profileKey });
+    },
+  });
+}
+
+export function useRemoveFavoriteBook(username: string) {
+  const queryClient = useQueryClient();
+  const profileKey = ["users", "profile", username.toLowerCase()] as const;
+  return useMutation({
+    mutationFn: (openLibraryKey: string) => removeFavoriteBook(openLibraryKey),
+    onSuccess: async (_result, openLibraryKey) => {
+      queryClient.setQueryData<PublicProfile>(profileKey, (current) => {
+        if (!current) return current;
+        const remainingFavorites = current.favorite_books
+          .filter((book) => book.open_library_key !== openLibraryKey);
+        return { ...current, favorite_books: remainingFavorites };
+      });
+      await queryClient.invalidateQueries({ queryKey: profileKey });
     },
   });
 }

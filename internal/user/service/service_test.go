@@ -47,6 +47,20 @@ func (m *mockUserStore) Update(ctx context.Context, id string, input user.Update
 	return updated, nil
 }
 
+func (m *mockUserStore) AddFavoriteBook(_ context.Context, _ string, input user.FavoriteBookInput) (user.FavoriteBook, error) {
+	return user.FavoriteBook{
+		OpenLibraryKey: input.OpenLibraryKey,
+		Title:          input.Title,
+		Authors:        input.Authors,
+		CoverURL:       input.CoverURL,
+		PublishedYear:  input.PublishedYear,
+	}, m.err
+}
+
+func (m *mockUserStore) RemoveFavoriteBook(context.Context, string, string) error {
+	return m.err
+}
+
 func (m *mockUserStore) GetStats(ctx context.Context, userID string) (user.ProfileStats, error) {
 	if m.err != nil {
 		return user.ProfileStats{}, m.err

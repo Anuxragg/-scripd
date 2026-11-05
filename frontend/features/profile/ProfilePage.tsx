@@ -2,9 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { ApiError } from "@/lib/api/client";
 import { useCurrentUser } from "@/features/auth/hooks";
+import { BookCover } from "@/features/books/BookCover";
+import { useBookSearch } from "@/features/books/hooks";
+import type { Book } from "@/features/books/api";
 import {
+  useAddFavoriteBook,
+  useRemoveFavoriteBook,
   useProfile,
   useProfileStats,
   useFollowStatus,
@@ -24,11 +30,40 @@ export function ProfilePage({ username }: { username: string }) {
   const followStatusQuery = useFollowStatus(username);
   const followMutation = useFollowUser(username);
   const unfollowMutation = useUnfollowUser(username);
+  const addFavoriteBookMutation = useAddFavoriteBook(username);
+  const removeFavoriteBookMutation = useRemoveFavoriteBook(username);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [isFavoriteBookModalOpen, setIsFavoriteBookModalOpen] = useState(false);
+  const [favoriteBookName, setFavoriteBookName] = useState("");
+  const [favoriteBookError, setFavoriteBookError] = useState("");
+  const [favoriteBookActionError, setFavoriteBookActionError] = useState("");
+  const [debouncedFavoriteBookName, setDebouncedFavoriteBookName] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
+  const favoriteBookSearch = useBookSearch(
+    debouncedFavoriteBookName,
+    1,
+    isFavoriteBookModalOpen && debouncedFavoriteBookName.length > 0,
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setDebouncedFavoriteBookName(favoriteBookName.trim()),
+      300,
+    );
+    return () => window.clearTimeout(timer);
+  }, [favoriteBookName]);
+
+  useEffect(() => {
+    if (!isFavoriteBookModalOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFavoriteBookModalOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isFavoriteBookModalOpen]);
 
   const normalizedUsername = username.toLowerCase();
 
@@ -80,10 +115,7 @@ export function ProfilePage({ username }: { username: string }) {
     return new Date(r.finished_at).getFullYear() === currentYear;
   });
 
-  // Top 4 favorite books (highest rated or first 4 read)
-  const favoriteBooks = [...readBooks]
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-    .slice(0, 4);
+  const favoriteBooks = profile?.favorite_books ?? [];
 
   // Recent activity (latest 4 entries)
   const recentActivity = allReads.slice(0, 4);
@@ -202,6 +234,51 @@ export function ProfilePage({ username }: { username: string }) {
       }
     } catch {
       // Local optimistic state kept
+    }
+  }
+
+  async function handleSelectFavoriteBook(book: Book) {
+    setFavoriteBookError("");
+    try {
+      await addFavoriteBookMutation.mutateAsync({
+        open_library_key: book.open_library_key.startsWith("/works/")
+          ? book.open_library_key
+          : `/works/${book.open_library_key}`,
+        title: book.title,
+        authors: book.authors,
+        cover_url: book.cover_url,
+        published_year: book.published_year,
+      });
+      setFavoriteBookName("");
+      setDebouncedFavoriteBookName("");
+      setIsFavoriteBookModalOpen(false);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "favorite_limit_reached") {
+        setFavoriteBookError("You can add up to four favorite books.");
+      } else if (error instanceof ApiError && error.status === 401) {
+        setFavoriteBookError("Your sign-in session expired. Sign in again to add favorite books.");
+      } else if (error instanceof ApiError && error.status === 404) {
+        setFavoriteBookError("The local API needs a restart before favorite books can be saved.");
+      } else if (error instanceof ApiError) {
+        setFavoriteBookError(error.message);
+      } else {
+        setFavoriteBookError("Couldn't connect to Scripd to save this book. Please try again.");
+      }
+    }
+  }
+
+  async function handleRemoveFavoriteBook(openLibraryKey: string) {
+    setFavoriteBookActionError("");
+    try {
+      await removeFavoriteBookMutation.mutateAsync(openLibraryKey);
+    } catch (error) {
+      setFavoriteBookActionError(
+        error instanceof ApiError && error.status === 401
+          ? "Your sign-in session expired. Sign in again to remove favorite books."
+          : error instanceof Error
+            ? error.message
+            : "Couldn't remove this favorite book. Please try again.",
+      );
     }
   }
 
@@ -579,50 +656,78 @@ export function ProfilePage({ username }: { username: string }) {
                   )}
                 </div>
 
+                {favoriteBookActionError && (
+                  <p role="alert" className="mb-3 text-xs font-medium text-red-300">
+                    {favoriteBookActionError}
+                  </p>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                  {favoriteBooks.length > 0
-                    ? favoriteBooks.map((read) => (
-                        <Link
-                          key={read.id}
-                          href={`/books/${read.book.id}`}
-                          className="group relative block aspect-[2/3] overflow-hidden rounded-xl border border-[#2c3440] bg-[#1a1f26] shadow-md transition hover:-translate-y-1 hover:border-[#00e054] hover:shadow-xl"
+                  {favoriteBooks.map((book) => (
+                    <div
+                      key={book.open_library_key}
+                      className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-[#2c3440] bg-[#1a1f26] shadow-md transition hover:-translate-y-1 hover:border-[#00e054] hover:shadow-xl"
+                    >
+                      <Link
+                        href={`/books/${book.open_library_key.replace(/^\/works\//, "")}`}
+                        className="absolute inset-0 block"
+                        aria-label={`${book.title} by ${book.authors.join(", ")}`}
+                      >
+                        <BookCover
+                          coverURL={book.cover_url || undefined}
+                          title={book.title}
+                          authors={book.authors}
+                          className="h-full w-full rounded-none shadow-none"
+                        />
+                      </Link>
+                      {isOwner && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${book.title} from favorite books`}
+                          title="Remove favorite"
+                          disabled={removeFavoriteBookMutation.isPending}
+                          onClick={() => void handleRemoveFavoriteBook(book.open_library_key)}
+                          className="pointer-events-none absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[#b8c8d6] bg-[#c9d7e4] text-[#40576b] opacity-0 shadow-[0_2px_8px_rgba(0,0,0,0.45)] transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-white disabled:cursor-wait disabled:opacity-60"
                         >
-                          {read.book.cover_url ? (
-                            <Image
-                              src={read.book.cover_url}
-                              alt={read.book.title}
-                              fill
-                              sizes="(max-width: 640px) 50vw, 25vw"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full flex-col justify-end p-3 bg-gradient-to-t from-black via-black/40 to-transparent">
-                              <span className="font-serif text-sm font-bold text-white line-clamp-2">
-                                {read.book.title}
-                              </span>
-                              <span className="text-[11px] text-[#89a] line-clamp-1">
-                                {read.book.authors.join(", ")}
-                              </span>
-                            </div>
-                          )}
-                          {read.rating && (
-                            <div className="absolute top-2 right-2 rounded-md bg-black/80 px-1.5 py-0.5 text-xs font-bold text-[#00e054] backdrop-blur-sm">
-                              ★ {read.rating}
-                            </div>
-                          )}
-                        </Link>
-                      ))
-                    : // Empty placeholder slots (4 slots)
-                      [1, 2, 3, 4].map((slot) => (
-                        <Link
-                          key={slot}
-                          href="/books"
-                          className="flex aspect-[2/3] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#242c34] bg-[#14181c]/60 p-4 text-center transition hover:border-[#00e054] hover:bg-[#181c22]"
-                        >
-                          <span className="text-2xl text-[#455]">+</span>
-                          <span className="mt-2 text-xs font-medium text-[#789]">Add favorite</span>
-                        </Link>
-                      ))}
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                          >
+                            <path d="m6 6 12 12M18 6 6 18" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {Array.from({ length: Math.max(0, 4 - favoriteBooks.length) }, (_, slot) =>
+                    isOwner ? (
+                      <button
+                        key={`add-${slot}`}
+                        type="button"
+                        onClick={() => {
+                          setFavoriteBookName("");
+                          setFavoriteBookError("");
+                          setDebouncedFavoriteBookName("");
+                          setIsFavoriteBookModalOpen(true);
+                        }}
+                        className="flex aspect-[2/3] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#00e054] bg-[#14181c]/60 p-4 text-center transition hover:bg-[#181c22]"
+                      >
+                        <span className="text-2xl text-[#455]">+</span>
+                        <span className="mt-2 text-xs font-medium text-[#789]">Add favorite</span>
+                      </button>
+                    ) : (
+                      <div
+                        key={`empty-${slot}`}
+                        aria-hidden="true"
+                        className="aspect-[2/3] rounded-xl border-2 border-dashed border-[#242c34] bg-[#14181c]/40"
+                      />
+                    ),
+                  )}
                 </div>
               </section>
 
@@ -651,21 +756,12 @@ export function ProfilePage({ username }: { username: string }) {
                           href={`/books/${read.book.id}`}
                           className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-[#2c3440] bg-[#1a1f26] transition hover:-translate-y-1 hover:border-[#40bcf4]"
                         >
-                          {read.book.cover_url ? (
-                            <Image
-                              src={read.book.cover_url}
-                              alt={read.book.title}
-                              fill
-                              sizes="(max-width: 640px) 50vw, 25vw"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full flex-col justify-end p-2 bg-black/60">
-                              <span className="text-xs font-bold text-white line-clamp-2">
-                                {read.book.title}
-                              </span>
-                            </div>
-                          )}
+                          <BookCover
+                            coverURL={read.book.cover_url || undefined}
+                            title={read.book.title}
+                            authors={read.book.authors}
+                            className="h-full w-full rounded-none shadow-none"
+                          />
                           {read.rating && (
                             <div className="absolute bottom-1.5 left-1.5 text-[11px] font-bold text-[#00e054]">
                               {"★".repeat(Math.round(read.rating))}
@@ -706,14 +802,12 @@ export function ProfilePage({ username }: { username: string }) {
                             key={read.id}
                             className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded-md border border-[#2c3440] bg-[#1a1f26] shadow"
                           >
-                            {read.book.cover_url && (
-                              <Image
-                                src={read.book.cover_url}
-                                alt={read.book.title}
-                                fill
-                                className="object-cover"
-                              />
-                            )}
+                            <BookCover
+                              coverURL={read.book.cover_url || undefined}
+                              title={read.book.title}
+                              authors={read.book.authors}
+                              className="h-full w-full rounded-none shadow-none"
+                            />
                           </div>
                         ))}
                       </div>
@@ -780,14 +874,12 @@ export function ProfilePage({ username }: { username: string }) {
                       className="flex gap-4 rounded-2xl border border-[#242c34] bg-[#161a20] p-4 sm:p-5"
                     >
                       <div className="relative h-20 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-[#2c3440] bg-[#1a1f26]">
-                        {read.book.cover_url && (
-                          <Image
-                            src={read.book.cover_url}
-                            alt={read.book.title}
-                            fill
-                            className="object-cover"
-                          />
-                        )}
+                        <BookCover
+                          coverURL={read.book.cover_url || undefined}
+                          title={read.book.title}
+                          authors={read.book.authors}
+                          className="h-full w-full rounded-none shadow-none"
+                        />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
@@ -858,14 +950,12 @@ export function ProfilePage({ username }: { username: string }) {
                       href={`/books/${read.book.id}`}
                       className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-[#2c3440] bg-[#1a1f26] transition hover:-translate-y-1 hover:border-[#00e054]"
                     >
-                      {read.book.cover_url && (
-                        <Image
-                          src={read.book.cover_url}
-                          alt={read.book.title}
-                          fill
-                          className="object-cover"
-                        />
-                      )}
+                      <BookCover
+                        coverURL={read.book.cover_url || undefined}
+                        title={read.book.title}
+                        authors={read.book.authors}
+                        className="h-full w-full rounded-none shadow-none"
+                      />
                     </Link>
                   ))}
                 </div>
@@ -889,14 +979,12 @@ export function ProfilePage({ username }: { username: string }) {
                     <div key={read.id} className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
                         <div className="relative h-12 w-8 rounded overflow-hidden bg-[#1e242c]">
-                          {read.book.cover_url && (
-                            <Image
-                              src={read.book.cover_url}
-                              alt={read.book.title}
-                              fill
-                              className="object-cover"
-                            />
-                          )}
+                          <BookCover
+                            coverURL={read.book.cover_url || undefined}
+                            title={read.book.title}
+                            authors={read.book.authors}
+                            className="h-full w-full rounded-none shadow-none"
+                          />
                         </div>
                         <div>
                           <Link
@@ -955,14 +1043,12 @@ export function ProfilePage({ username }: { username: string }) {
                       href={`/books/${read.book.id}`}
                       className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-[#2c3440] bg-[#1a1f26] transition hover:-translate-y-1 hover:border-[#40bcf4]"
                     >
-                      {read.book.cover_url && (
-                        <Image
-                          src={read.book.cover_url}
-                          alt={read.book.title}
-                          fill
-                          className="object-cover"
-                        />
-                      )}
+                      <BookCover
+                        coverURL={read.book.cover_url || undefined}
+                        title={read.book.title}
+                        authors={read.book.authors}
+                        className="h-full w-full rounded-none shadow-none"
+                      />
                     </Link>
                   ))}
                 </div>
@@ -1014,6 +1100,106 @@ export function ProfilePage({ username }: { username: string }) {
                   height={180}
                   className="rounded-lg"
                 />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isFavoriteBookModalOpen && (
+          <div
+            className="fixed inset-0 z-[60] flex items-start justify-center bg-black/80 p-4 pt-4 backdrop-blur-[1px]"
+            onClick={() => setIsFavoriteBookModalOpen(false)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="favorite-book-dialog-title"
+              className="relative w-full max-w-[460px] rounded-[3px] bg-[#45596a] px-6 pb-6 pt-5 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setIsFavoriteBookModalOpen(false)}
+                className="absolute right-5 top-4 text-[34px] font-extralight leading-none text-[#91a2b2] transition hover:text-white"
+                aria-label="Close favorite book dialog"
+              >
+                ×
+              </button>
+              <h2
+                id="favorite-book-dialog-title"
+                className="pr-12 text-lg font-medium uppercase tracking-[0.14em] text-[#b1c1ce]"
+              >
+                Pick a Favorite Book
+              </h2>
+              <label
+                htmlFor="favorite-book-name"
+                className="mt-5 block text-sm font-semibold text-white"
+              >
+                Name of Book
+              </label>
+              <div className="relative mt-1.5">
+                <input
+                  id="favorite-book-name"
+                  autoFocus
+                  type="text"
+                  value={favoriteBookName}
+                  onChange={(event) => {
+                    setFavoriteBookName(event.target.value);
+                    setFavoriteBookError("");
+                  }}
+                  className="h-12 w-full rounded-[4px] border border-[#dfe3e8] bg-white px-3 text-base text-[#15191e] shadow-[0_2px_8px_rgba(0,0,0,0.35)] outline-none focus:border-[#cbd5df]"
+                />
+                {favoriteBookName.trim() && (
+                  <div
+                    role="listbox"
+                    aria-label="Book search results"
+                    className="absolute left-0 right-0 top-[calc(100%-1px)] z-10 max-h-[268px] overflow-y-auto border border-[#c7d0d8] bg-[#65798b] text-white shadow-xl"
+                  >
+                    {addFavoriteBookMutation.isPending ? (
+                      <div className="px-3 py-2.5 text-sm text-[#d5dee6]">
+                        Adding to your favorites…
+                      </div>
+                    ) : favoriteBookSearch.isPending || favoriteBookSearch.isFetching ? (
+                      <div className="px-3 py-2.5 text-sm text-[#d5dee6]">Searching books…</div>
+                    ) : favoriteBookSearch.data?.data.length ? (
+                      favoriteBookSearch.data.data.slice(0, 7).map((book) => (
+                        <button
+                          key={book.id}
+                          type="button"
+                          role="option"
+                        aria-selected={false}
+                        disabled={addFavoriteBookMutation.isPending}
+                        onClick={() => void handleSelectFavoriteBook(book)}
+                        className="flex w-full items-baseline gap-1.5 overflow-hidden px-3 py-2 text-left transition hover:bg-[#00b32e] focus:bg-[#00b32e] focus:outline-none disabled:opacity-60"
+                        >
+                          <span className="shrink-0 truncate text-[15px] leading-5 text-white">
+                            {book.title}
+                            {book.published_year ? ` (${book.published_year})` : ""}
+                          </span>
+                          <span className="truncate text-sm leading-5 text-[#d4dde5]">
+                            {book.authors.join(", ") || "Unknown author"}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2.5 text-sm text-[#e0e7ed]">
+                        No matching books found.
+                      </div>
+                    )}
+                    {favoriteBookError && (
+                      <div role="alert" className="border-t border-red-200/30 bg-red-950/50 px-3 py-2.5 text-xs font-medium text-red-100">
+                        {favoriteBookError}
+                      </div>
+                    )}
+                    <Link
+                      href={`/books?q=${encodeURIComponent(favoriteBookName.trim())}`}
+                      onClick={() => setIsFavoriteBookModalOpen(false)}
+                      className="block border-t border-[#8292a0] bg-[#45596a] px-3 py-2.5 text-xs text-[#d4dde5] hover:text-white"
+                    >
+                      Book not here? <span className="font-semibold underline">Browse the catalog.</span>
+                    </Link>
+                  </div>
+              )}
               </div>
             </div>
           </div>

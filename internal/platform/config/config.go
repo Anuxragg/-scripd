@@ -30,6 +30,7 @@ type Config struct {
 	SMTPPassword       string
 	SMTPFrom           string
 	SMTPRequireTLS     bool
+	GoogleBooksAPIKey  string
 	CORSAllowedOrigins []string
 	RateLimitRequests  int
 	RateLimitWindow    time.Duration
@@ -123,7 +124,7 @@ func Load() (Config, error) {
 		DatabaseURL:        databaseURL,
 		DBHost:             dbHost,
 		DBPort:             dbPort,
-		DBName:             dbName, 
+		DBName:             dbName,
 		DBUser:             dbUser,
 		DBPassword:         dbPassword,
 		DBSSLMode:          dbSSLMode,
@@ -135,6 +136,7 @@ func Load() (Config, error) {
 		SMTPPassword:       os.Getenv("SMTP_PASSWORD"),
 		SMTPFrom:           env("SMTP_FROM", "Scripd <noreply@scripd.local>"),
 		SMTPRequireTLS:     smtpRequireTLS,
+		GoogleBooksAPIKey:  strings.TrimSpace(os.Getenv("GOOGLE_BOOKS_API_KEY")),
 		CORSAllowedOrigins: splitCSV(env("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
 		RateLimitRequests:  rateLimitRequests,
 		RateLimitWindow:    rateLimitWindow,
