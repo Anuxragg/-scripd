@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { BookCover } from "@/features/books/BookCover";
-import { useBook } from "@/features/books/hooks";
+import { useBook, useBookDescription } from "@/features/books/hooks";
 import { useCurrentUser } from "@/features/auth/hooks";
 import {
   useCreateRead,
@@ -278,6 +278,16 @@ export function BookDetailPage({
 
   const authorNames = authors.join(", ");
 
+  const existingDescription = apiBook?.description?.trim() || knownMatch?.description?.trim();
+  const descriptionQuery = useBookDescription(
+    {
+      title,
+      authors: authors.filter((author) => author !== "Author Unknown"),
+      isbn13: apiBook?.isbn13 ?? knownMatch?.isbn13,
+    },
+    !existingDescription && Boolean(apiBook || knownMatch),
+  );
+
   const publishedYear = apiBook?.published_year ?? knownMatch?.year ?? "Classic";
 
   const pages = apiBook?.isbn13 ? "384 pages" : (knownMatch?.pages ?? "Standard Edition");
@@ -285,17 +295,8 @@ export function BookDetailPage({
   const coverURL = apiBook?.cover_url || knownMatch?.coverURL;
 
   const description = useMemo(() => {
-    if (apiBook?.description && apiBook.description.trim()) {
-      return apiBook.description;
-    }
-    if (knownMatch?.description) {
-      return knownMatch.description;
-    }
-    if (subtitle) {
-      return `${title}: ${subtitle}. Written by ${authorNames}. Cataloged by Scripd with editions indexed on Open Library.`;
-    }
-    return `An acclaimed literary work by ${authorNames}. Cataloged in the Scripd library with full metadata, reader community reviews, and reading diary tracking.`;
-  }, [apiBook, knownMatch, subtitle, title, authorNames]);
+    return existingDescription || descriptionQuery.data?.trim() || "";
+  }, [existingDescription, descriptionQuery.data]);
 
   // Derive contextual genre and topic tags based on actual book content
   const tags = useMemo(() => {
@@ -368,7 +369,13 @@ export function BookDetailPage({
           <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
             {/* Book Cover Poster */}
             <div className="shrink-0 w-36 sm:w-44 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/10 ring-1 ring-black/80 bg-[#161922]">
-              <BookCover className="h-full w-full object-cover" coverURL={coverURL} title={title} />
+              <BookCover
+                className="h-full w-full object-cover"
+                coverURL={coverURL}
+                isbn13={apiBook?.isbn13 ?? knownMatch?.isbn13}
+                title={title}
+                authors={authors}
+              />
             </div>
 
             {/* Meta, Title, Overview */}
@@ -397,7 +404,10 @@ export function BookDetailPage({
                   Overview
                 </h2>
                 <p className="book-overview-para text-[16px] font-normal leading-[26px] text-[rgb(179,179,179)]">
-                  {description}
+                  {description ||
+                    (descriptionQuery.isLoading
+                      ? "Looking up the book overview…"
+                      : "Overview unavailable for this edition.")}
                 </p>
 
                 {/* Dynamic Genre / Subject Capsules */}

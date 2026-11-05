@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getBook, searchBooks } from "@/features/books/api";
+import { getBook, getBookDescription, searchBooks } from "@/features/books/api";
 
 export function useBookSearch(query: string, page: number, enabled: boolean) {
   return useQuery({
@@ -22,5 +22,18 @@ export function useBook(bookID: string, initialData?: Book | null) {
     enabled: Boolean(bookID),
     initialData: initialData ?? undefined,
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useBookDescription(
+  lookup: { title: string; authors: string[]; isbn13?: string },
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: ["books", "description", lookup.title, lookup.authors, lookup.isbn13],
+    queryFn: () => getBookDescription(lookup),
+    enabled: enabled && lookup.title.trim().length >= 2,
+    staleTime: 24 * 60 * 60_000,
+    retry: 1,
   });
 }

@@ -182,7 +182,9 @@ export function BookSearchPage({
                     <BookCover
                       className="h-full w-full object-cover"
                       coverURL={book.cover_url}
+                      isbn13={book.isbn13}
                       title={book.title}
+                      authors={book.authors}
                     />
                   </div>
 
