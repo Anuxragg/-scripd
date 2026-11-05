@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ApiError } from "@/lib/api/client";
+import { checkUsernameAvailability } from "@/features/auth/api";
 import { useCurrentUser } from "@/features/auth/hooks";
 import { useProfile, useUpdateProfile } from "@/features/profile/hooks";
 import type { PublicProfile } from "@/features/profile/api";
@@ -41,6 +43,10 @@ function EditProfileFields({
   const updateMutation = useUpdateProfile(profile.username);
 
   const nameParts = (profile.display_name || "").trim().split(/\s+/);
+  const [username, setUsername] = useState(profile.username);
+  const [usernameAvailability, setUsernameAvailability] = useState<
+    "idle" | "checking" | "available" | "taken" | "error" | "current"
+  >("current");
   const [givenName, setGivenName] = useState(() => nameParts[0] || "");
   const [familyName, setFamilyName] = useState(() => nameParts.slice(1).join(" ") || "");
   const [bio, setBio] = useState(() => profile.bio || "");
@@ -88,6 +94,43 @@ function EditProfileFields({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const normalizedUsername = username.trim().toLowerCase();
+  const usernameIsValid = /^[a-z0-9_]{3,30}$/.test(normalizedUsername);
+  const isCurrentUsername = normalizedUsername === profile.username.toLowerCase();
+  const usernameCanBeSaved =
+    usernameIsValid && (isCurrentUsername || usernameAvailability === "available");
+
+  useEffect(() => {
+    const cleanUsername = username.trim().toLowerCase();
+    if (cleanUsername === profile.username.toLowerCase()) {
+      setUsernameAvailability("current");
+      return;
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
+      setUsernameAvailability("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    setUsernameAvailability("checking");
+    const timer = window.setTimeout(() => {
+      checkUsernameAvailability(cleanUsername, controller.signal)
+        .then(({ available }) => {
+          if (!controller.signal.aborted) {
+            setUsernameAvailability(available ? "available" : "taken");
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setUsernameAvailability("error");
+        });
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [username, profile.username]);
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -116,10 +159,40 @@ function EditProfileFields({
     e.preventDefault();
     setStatusMessage(null);
 
+    if (!usernameIsValid) {
+      setStatusMessage({
+        type: "error",
+        text: "Username must be 3–30 characters (letters, numbers, or underscores).",
+      });
+      return;
+    }
     const fullDisplayName = [givenName.trim(), familyName.trim()].filter(Boolean).join(" ");
     let finalAvatarURL = avatarURL.trim();
 
     try {
+      if (!isCurrentUsername) {
+        setUsernameAvailability("checking");
+        try {
+          const { available } = await checkUsernameAvailability(normalizedUsername);
+          if (!available) {
+            setUsernameAvailability("taken");
+            setStatusMessage({
+              type: "error",
+              text: "That username is already taken. Please choose another.",
+            });
+            return;
+          }
+          setUsernameAvailability("available");
+        } catch {
+          setUsernameAvailability("error");
+          setStatusMessage({
+            type: "error",
+            text: "Couldn't check username availability. Please try again.",
+          });
+          return;
+        }
+      }
+
       // If user uploaded/cropped a new image, it starts with "data:image..."
       if (finalAvatarURL.startsWith("data:")) {
         setIsUploadingPhoto(true);
@@ -133,7 +206,8 @@ function EditProfileFields({
         setIsUploadingPhoto(false);
       }
 
-      await updateMutation.mutateAsync({
+      const updatedProfile = await updateMutation.mutateAsync({
+        username: normalizedUsername,
         display_name: fullDisplayName,
         bio: bio.trim(),
         avatar_url: finalAvatarURL,
@@ -141,11 +215,15 @@ function EditProfileFields({
 
       try {
         localStorage.setItem(
-          `scripd_user_meta_${profile.username}`,
+          `scripd_user_meta_${updatedProfile.username}`,
           JSON.stringify({ location: location.trim(), website: website.trim() }),
         );
         if (finalAvatarURL) {
-          localStorage.setItem(`scripd_user_avatar_${profile.username}`, finalAvatarURL);
+          localStorage.setItem(`scripd_user_avatar_${updatedProfile.username}`, finalAvatarURL);
+        }
+        if (updatedProfile.username !== profile.username) {
+          localStorage.removeItem(`scripd_user_meta_${profile.username}`);
+          localStorage.removeItem(`scripd_user_avatar_${profile.username}`);
         }
         window.dispatchEvent(new Event("scripd_profile_updated"));
       } catch {
@@ -158,11 +236,19 @@ function EditProfileFields({
         setTimeout(() => onSuccess(), 600);
       } else {
         setTimeout(() => {
-          router.push(`/u/${profile.username}`);
+          router.push(`/u/${updatedProfile.username}`);
         }, 800);
       }
-    } catch {
+    } catch (err) {
       setIsUploadingPhoto(false);
+      if (err instanceof ApiError && err.status === 409) {
+        setUsernameAvailability("taken");
+        setStatusMessage({
+          type: "error",
+          text: "That username was just taken. Please choose another.",
+        });
+        return;
+      }
       setStatusMessage({
         type: "error",
         text: "Unable to save profile changes. Please check your connection and try again.",
@@ -271,7 +357,7 @@ function EditProfileFields({
           </h2>
 
           <div className="space-y-4">
-            {/* Username Field (Screenshot 1: with pencil icon) */}
+            {/* Username Field */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label style={graphikLabelStyle}>Username</label>
@@ -292,12 +378,43 @@ function EditProfileFields({
               <div className="relative">
                 <input
                   type="text"
-                  readOnly
-                  disabled
-                  value={profile.username}
-                  className="w-full rounded-xl border border-[#2c2d30] bg-[#161718] px-4 py-3 text-sm text-[#8fa0b5] cursor-not-allowed select-none"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setStatusMessage(null);
+                  }}
+                  maxLength={30}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-describedby="edit-profile-username-status"
+                  className="w-full rounded-xl border border-[#2c2d30] bg-[#161718] px-4 py-3 text-sm text-white outline-none placeholder-[#505d6e] focus:border-[#8b5cf6] transition"
                 />
               </div>
+              <p
+                id="edit-profile-username-status"
+                className={`mt-1.5 text-xs ${
+                  usernameAvailability === "available" || usernameAvailability === "current"
+                    ? "text-emerald-300"
+                    : usernameAvailability === "taken" || usernameAvailability === "error"
+                      ? "text-red-300"
+                      : "text-[#7e8e9f]"
+                }`}
+                role="status"
+                aria-live="polite"
+              >
+                {usernameAvailability === "checking"
+                  ? "Checking username…"
+                  : usernameAvailability === "available"
+                    ? `${normalizedUsername} is available.`
+                    : usernameAvailability === "taken"
+                      ? "That username is already taken."
+                      : usernameAvailability === "error"
+                        ? "Couldn't check username availability. Please try again."
+                        : usernameAvailability === "current"
+                          ? "This is your current username."
+                          : "Use 3–30 letters, numbers, or underscores."}
+              </p>
             </div>
 
             {/* Given Name & Family Name (Screenshot 1: Two Columns) */}
@@ -416,7 +533,12 @@ function EditProfileFields({
 
           <button
             type="submit"
-            disabled={updateMutation.isPending || isUploadingPhoto}
+            disabled={
+              updateMutation.isPending ||
+              isUploadingPhoto ||
+              usernameAvailability === "checking" ||
+              !usernameCanBeSaved
+            }
             className="rounded-xl bg-[#00e054] px-7 py-2.5 text-sm font-bold text-black hover:bg-[#00c549] transition disabled:opacity-50 cursor-pointer shadow-sm"
           >
             {isUploadingPhoto

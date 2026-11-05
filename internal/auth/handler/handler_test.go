@@ -87,6 +87,10 @@ func (s *stubAuthService) Register(context.Context, string, string, string, stri
 	return s.result, nil
 }
 
+func (s *stubAuthService) CheckUsernameAvailability(context.Context, string) (bool, error) {
+	return true, nil
+}
+
 func (s *stubAuthService) Login(context.Context, string, string) (service.SessionResult, error) {
 	s.loginCalls++
 	return s.result, nil

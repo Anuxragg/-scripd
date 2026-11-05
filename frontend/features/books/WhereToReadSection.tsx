@@ -64,23 +64,11 @@ export function WhereToReadSection({ title, authorNames }: WhereToReadProps) {
     <div className="w-full">
       {/* WHERE TO READ Letterboxd-style Card */}
       <div className="w-full rounded-2xl border border-[#2b333e] bg-[#1a2027] overflow-hidden font-[Inter,sans-serif] text-xs shadow-xl">
-        {/* Header Bar with Letterboxd Trailer-style Audiobook button */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#1f2630] border-b border-[#28323e]">
+        {/* Header Bar */}
+        <div className="flex items-center px-3.5 py-2.5 bg-[#1f2630] border-b border-[#28323e]">
           <span className="text-[11px] font-bold tracking-wider text-[#93a2b2] uppercase select-none">
             Where to Read
           </span>
-          <a
-            href={`https://www.audible.com/search?keywords=${encodedBook}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#2a3442] hover:bg-[#344152] text-[#c0d0e0] hover:text-white text-[10.5px] font-bold tracking-tight border border-[#374455] transition cursor-pointer select-none"
-            title="Listen to Audiobook"
-          >
-            <svg className="h-2.5 w-2.5 fill-current" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            <span>Audiobook</span>
-          </a>
         </div>
 
         {/* Brand Rows */}

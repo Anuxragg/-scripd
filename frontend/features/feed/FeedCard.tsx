@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { BookCover } from "@/features/books/BookCover";
 import type { FeedItem } from "@/features/feed/api";
 
 function formatRelativeTime(dateString: string): string {
@@ -30,7 +31,6 @@ function renderStars(rating: number): string {
 
 export function FeedCard({ item }: { item: FeedItem }) {
   const [showSpoilers, setShowSpoilers] = useState(false);
-  const [coverError, setCoverError] = useState(false);
 
   const userInitial = (item.user.display_name || item.user.username || "U").charAt(0).toUpperCase();
 
@@ -106,20 +106,12 @@ export function FeedCard({ item }: { item: FeedItem }) {
           href={`/books/${item.book.id}`}
           className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-[var(--line)] bg-[#e9e6df] shadow-sm transition hover:opacity-90"
         >
-          {item.book.cover_url && !coverError ? (
-            <Image
-              src={item.book.cover_url}
-              alt={item.book.title}
-              fill
-              unoptimized
-              className="object-cover"
-              onError={() => setCoverError(true)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[var(--forest-tint)] p-1 text-center font-serif text-xs font-bold text-[var(--forest)]">
-              {item.book.title.slice(0, 1)}
-            </div>
-          )}
+          <BookCover
+            coverURL={item.book.cover_url || undefined}
+            title={item.book.title}
+            authors={item.book.authors}
+            className="h-full w-full rounded-none shadow-none"
+          />
         </Link>
 
         <div className="flex flex-col justify-center min-w-0">

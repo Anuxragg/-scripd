@@ -174,10 +174,12 @@ func normalizeDocument(document searchDocument, raw json.RawMessage) (book.Impor
 
 	var coverURL *string
 	if document.CoverID != nil && *document.CoverID > 0 {
-		value := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-M.jpg?default=false", *document.CoverID)
+		value := fmt.Sprintf("https://covers.openlibrary.org/b/id/%d-L.jpg?default=false", *document.CoverID)
 		coverURL = &value
 	} else if isbn13 != nil && *isbn13 != "" {
-		value := fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-M.jpg?default=false", *isbn13)
+		// Suppress Open Library's generic "no cover" image. The UI renders its
+		// own title fallback when this ISBN has no original cover.
+		value := fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", *isbn13)
 		coverURL = &value
 	}
 
