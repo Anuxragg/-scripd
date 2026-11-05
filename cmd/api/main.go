@@ -19,6 +19,15 @@ import (
 	bookprovider "github.com/scripd-app/scripd/internal/book/provider"
 	bookrepository "github.com/scripd-app/scripd/internal/book/repository"
 	bookservice "github.com/scripd-app/scripd/internal/book/service"
+	commenthandler "github.com/scripd-app/scripd/internal/comment/handler"
+	commentrepository "github.com/scripd-app/scripd/internal/comment/repository"
+	commentservice "github.com/scripd-app/scripd/internal/comment/service"
+	feedhandler "github.com/scripd-app/scripd/internal/feed/handler"
+	feedrepository "github.com/scripd-app/scripd/internal/feed/repository"
+	feedservice "github.com/scripd-app/scripd/internal/feed/service"
+	followhandler "github.com/scripd-app/scripd/internal/follow/handler"
+	followrepository "github.com/scripd-app/scripd/internal/follow/repository"
+	followservice "github.com/scripd-app/scripd/internal/follow/service"
 	"github.com/scripd-app/scripd/internal/platform/config"
 	"github.com/scripd-app/scripd/internal/platform/db"
 	"github.com/scripd-app/scripd/internal/platform/email"
@@ -30,15 +39,6 @@ import (
 	reviewhandler "github.com/scripd-app/scripd/internal/review/handler"
 	reviewrepository "github.com/scripd-app/scripd/internal/review/repository"
 	reviewservice "github.com/scripd-app/scripd/internal/review/service"
-	commenthandler "github.com/scripd-app/scripd/internal/comment/handler"
-	commentrepository "github.com/scripd-app/scripd/internal/comment/repository"
-	commentservice "github.com/scripd-app/scripd/internal/comment/service"
-	feedhandler "github.com/scripd-app/scripd/internal/feed/handler"
-	feedrepository "github.com/scripd-app/scripd/internal/feed/repository"
-	feedservice "github.com/scripd-app/scripd/internal/feed/service"
-	followhandler "github.com/scripd-app/scripd/internal/follow/handler"
-	followrepository "github.com/scripd-app/scripd/internal/follow/repository"
-	followservice "github.com/scripd-app/scripd/internal/follow/service"
 	userhandler "github.com/scripd-app/scripd/internal/user/handler"
 	userrepository "github.com/scripd-app/scripd/internal/user/repository"
 	userservice "github.com/scripd-app/scripd/internal/user/service"
@@ -79,7 +79,8 @@ func run() error {
 	sessionMiddleware := authmiddleware.New(authSvc, cfg.CORSAllowedOrigins, log)
 	bookRepo := bookrepository.NewPostgres(pool)
 	bookCatalog := bookprovider.NewOpenLibrary(nil, "")
-	bookSvc := bookservice.New(bookCatalog, bookRepo)
+	bookDescriptions := bookprovider.NewGoogleBooks(nil, cfg.GoogleBooksAPIKey)
+	bookSvc := bookservice.New(bookCatalog, bookRepo, bookDescriptions)
 	bookHTTP := bookhandler.New(bookSvc, log)
 	readRepo := readrepository.NewPostgres(pool)
 	readSvc := readservice.New(readRepo)

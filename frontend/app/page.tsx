@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
+import { BookCover } from "@/features/books/BookCover";
 import { useCurrentUser } from "@/features/auth/hooks";
 
 interface PosterItem {
@@ -189,11 +190,11 @@ const POPULAR_LISTS = [
     itemCount: 28,
     likes: 842,
     covers: [
-      "https://covers.openlibrary.org/b/id/8231856-M.jpg",
-      "https://covers.openlibrary.org/b/id/8235113-M.jpg",
-      "https://covers.openlibrary.org/b/id/10522964-M.jpg",
-      "https://covers.openlibrary.org/b/id/12847926-M.jpg",
-      "https://covers.openlibrary.org/b/id/8315147-M.jpg",
+      "https://covers.openlibrary.org/b/id/8231856-L.jpg",
+      "https://covers.openlibrary.org/b/id/8235113-L.jpg",
+      "https://covers.openlibrary.org/b/id/10522964-L.jpg",
+      "https://covers.openlibrary.org/b/id/12847926-L.jpg",
+      "https://covers.openlibrary.org/b/id/8315147-L.jpg",
     ],
   },
   {
@@ -202,11 +203,11 @@ const POPULAR_LISTS = [
     itemCount: 50,
     likes: 1420,
     covers: [
-      "https://covers.openlibrary.org/b/id/12836262-M.jpg",
-      "https://covers.openlibrary.org/b/id/8231856-M.jpg",
-      "https://covers.openlibrary.org/b/id/8235113-M.jpg",
-      "https://covers.openlibrary.org/b/id/7222246-M.jpg",
-      "https://covers.openlibrary.org/b/id/10522964-M.jpg",
+      "https://covers.openlibrary.org/b/id/12836262-L.jpg",
+      "https://covers.openlibrary.org/b/id/8231856-L.jpg",
+      "https://covers.openlibrary.org/b/id/8235113-L.jpg",
+      "https://covers.openlibrary.org/b/id/7222246-L.jpg",
+      "https://covers.openlibrary.org/b/id/10522964-L.jpg",
     ],
   },
   {
@@ -215,11 +216,11 @@ const POPULAR_LISTS = [
     itemCount: 24,
     likes: 910,
     covers: [
-      "https://covers.openlibrary.org/b/id/10522964-M.jpg",
-      "https://covers.openlibrary.org/b/id/8235113-M.jpg",
-      "https://covers.openlibrary.org/b/id/8231856-M.jpg",
-      "https://covers.openlibrary.org/b/id/12847926-M.jpg",
-      "https://covers.openlibrary.org/b/id/12836262-M.jpg",
+      "https://covers.openlibrary.org/b/id/10522964-L.jpg",
+      "https://covers.openlibrary.org/b/id/8235113-L.jpg",
+      "https://covers.openlibrary.org/b/id/8231856-L.jpg",
+      "https://covers.openlibrary.org/b/id/12847926-L.jpg",
+      "https://covers.openlibrary.org/b/id/12836262-L.jpg",
     ],
   },
 ];
@@ -234,7 +235,7 @@ const RECENT_DIARY = [
     hasReview: true,
     liked: true,
     reread: false,
-    coverURL: "https://covers.openlibrary.org/b/id/12847926-M.jpg",
+    coverURL: "https://covers.openlibrary.org/b/id/12847926-L.jpg",
   },
   {
     id: "secret-history",
@@ -245,7 +246,7 @@ const RECENT_DIARY = [
     hasReview: true,
     liked: true,
     reread: true,
-    coverURL: "https://covers.openlibrary.org/b/id/8231856-M.jpg",
+    coverURL: "https://covers.openlibrary.org/b/id/8231856-L.jpg",
   },
   {
     id: "klara-and-the-sun",
@@ -256,7 +257,7 @@ const RECENT_DIARY = [
     hasReview: true,
     liked: false,
     reread: false,
-    coverURL: "https://covers.openlibrary.org/b/id/10522964-M.jpg",
+    coverURL: "https://covers.openlibrary.org/b/id/10522964-L.jpg",
   },
   {
     id: "pachinko",
@@ -267,7 +268,7 @@ const RECENT_DIARY = [
     hasReview: true,
     liked: true,
     reread: false,
-    coverURL: "https://covers.openlibrary.org/b/id/8315147-M.jpg",
+    coverURL: "https://covers.openlibrary.org/b/id/8315147-L.jpg",
   },
   {
     id: "dune",
@@ -278,7 +279,7 @@ const RECENT_DIARY = [
     hasReview: false,
     liked: true,
     reread: false,
-    coverURL: "https://covers.openlibrary.org/b/id/12836262-M.jpg",
+    coverURL: "https://covers.openlibrary.org/b/id/12836262-L.jpg",
   },
 ];
 
@@ -519,13 +520,10 @@ export default function HomePage() {
                         className="relative h-24 w-16 overflow-hidden rounded-[2px] border border-[#2c3440] shadow-md transition duration-200 group-hover:scale-105"
                         style={{ zIndex: i + 1 }}
                       >
-                        <Image
-                          src={url}
-                          alt="Book cover"
-                          fill
-                          sizes="80px"
-                          className="object-cover"
-                          unoptimized
+                        <BookCover
+                          coverURL={url}
+                          title="Book cover unavailable"
+                          className="h-full w-full rounded-none shadow-none"
                         />
                       </div>
                     ))}
@@ -590,13 +588,10 @@ export default function HomePage() {
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-3">
                         <div className="relative h-10 w-7 shrink-0 overflow-hidden rounded-[2px] border border-[#2c3440]">
-                          <Image
-                            src={entry.coverURL}
-                            alt={entry.title}
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                            unoptimized
+                          <BookCover
+                            coverURL={entry.coverURL}
+                            title={entry.title}
+                            className="h-full w-full rounded-none shadow-none"
                           />
                         </div>
                         <Link

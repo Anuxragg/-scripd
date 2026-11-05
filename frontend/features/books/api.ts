@@ -46,8 +46,55 @@ const bookResponseSchema = z.object({
   meta: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
+const bookDescriptionResponseSchema = z.object({
+  data: z.object({
+    description: z.string(),
+    source: z.string(),
+  }),
+  meta: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const bookCoverResponseSchema = z.object({
+  data: z.object({ cover_url: z.url() }),
+});
+
+export interface BookDescriptionLookup {
+  title: string;
+  authors: string[];
+  isbn13?: string;
+}
+
 export type Book = z.infer<typeof bookSchema>;
 export type BookSearchResult = z.infer<typeof searchResponseSchema>;
+
+export async function getBookDescription(lookup: BookDescriptionLookup): Promise<string> {
+  const params = new URLSearchParams({ title: lookup.title });
+  for (const author of lookup.authors.slice(0, 5)) {
+    params.append("author", author);
+  }
+  if (lookup.isbn13) {
+    params.set("isbn13", lookup.isbn13);
+  }
+  const response = await apiRequest(
+    `/api/v1/books/description?${params.toString()}`,
+    bookDescriptionResponseSchema,
+  );
+  return response.data.description;
+}
+
+export async function getBookCoverByISBN(lookup: BookDescriptionLookup): Promise<string> {
+  const params = new URLSearchParams();
+  if (lookup.isbn13) params.set("isbn13", lookup.isbn13);
+  if (lookup.title) params.set("title", lookup.title);
+  for (const author of lookup.authors.slice(0, 5)) {
+    params.append("author", author);
+  }
+  const response = await apiRequest(
+    `/api/v1/books/cover?${params.toString()}`,
+    bookCoverResponseSchema,
+  );
+  return response.data.cover_url;
+}
 
 export const FAMOUS_BOOKS_CATALOG: Book[] = [
   {
@@ -229,7 +276,7 @@ export async function searchBooks(
   limit = 12,
 ): Promise<BookSearchResult> {
   const trimmed = query.trim();
-  if (!trimmed || trimmed.length < 2) {
+  if (!trimmed) {
     return {
       data: [],
       meta: { page: 1, limit, total: 0, has_more: false, source: "open_library" },
@@ -238,14 +285,16 @@ export async function searchBooks(
 
   const params = new URLSearchParams({ q: trimmed, page: String(page), limit: String(limit) });
 
-  // 1. First attempt: Go backend search
-  try {
-    const result = await apiRequest(`/api/v1/books/search?${params}`, searchResponseSchema);
-    if (result.data && result.data.length > 0) {
-      return result;
+  // The backend requires two characters; one-character autocomplete queries go straight to Open Library.
+  if (trimmed.length >= 2) {
+    try {
+      const result = await apiRequest(`/api/v1/books/search?${params}`, searchResponseSchema);
+      if (result.data && result.data.length > 0) {
+        return result;
+      }
+    } catch {
+      // Backend search failed or timed out, will fall back gracefully
     }
-  } catch {
-    // Backend search failed or timed out, will fall back gracefully
   }
 
   // 2. Direct client fallback to Open Library Search
@@ -497,12 +546,54 @@ export async function getBook(bookID: string): Promise<Book> {
           if (match) publishedYear = parseInt(match[1], 10);
         }
 
+        const authorKeys = Array.isArray(data.authors)
+          ? data.authors
+              .map((entry: Record<string, unknown>) => {
+                const author = entry.author as Record<string, unknown> | undefined;
+                return typeof author?.key === "string"
+                  ? author.key
+                  : typeof entry.key === "string"
+                    ? entry.key
+                    : null;
+              })
+              .filter((key: unknown): key is string => typeof key === "string")
+              .slice(0, 5)
+          : [];
+        let authorNames: string[] = [];
+        if (authorKeys.length > 0) {
+          const resolved = await Promise.all(
+            authorKeys.map(async (key: string) => {
+              try {
+                const authorResponse = await fetch(`https://openlibrary.org${key}.json`);
+                if (!authorResponse.ok) return null;
+                const authorData = await authorResponse.json();
+                return typeof authorData.name === "string" ? authorData.name : null;
+              } catch {
+                return null;
+              }
+            }),
+          );
+          authorNames = resolved.filter((name): name is string => Boolean(name));
+        }
+        if (authorNames.length === 0) authorNames = ["Author Unknown"];
+
+        const isbnList = Array.isArray(data.isbn_13)
+          ? data.isbn_13
+          : Array.isArray(data.isbn)
+            ? data.isbn
+            : [];
+        const isbn13 = isbnList.find(
+          (value: unknown): value is string => typeof value === "string" && /^\d{13}$/.test(value),
+        );
+
         return {
           id: cleanId,
           open_library_key: `/books/${cleanId}`,
+          isbn13,
           title,
           subtitle,
-          authors: Array.isArray(data.publishers) ? [data.publishers[0]] : ["Author Unknown"],
+          authors: authorNames,
+          author_keys: authorKeys,
           cover_url: coverUrl,
           published_year: publishedYear,
           description: undefined,

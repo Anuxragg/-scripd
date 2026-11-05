@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { ApiError } from "@/lib/api/client";
+import { checkUsernameAvailability } from "@/features/auth/api";
 import { useLogin, useRegister } from "@/features/auth/hooks";
 import { sendSupabaseOtp, verifySupabaseOtp } from "@/lib/auth/supabaseAuth";
 
@@ -271,6 +272,9 @@ export function RegisterForm() {
 
   // Form Fields
   const [username, setUsername] = useState("");
+  const [usernameAvailability, setUsernameAvailability] = useState<
+    "idle" | "checking" | "available" | "taken" | "error"
+  >("idle");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -291,7 +295,36 @@ export function RegisterForm() {
     return () => clearInterval(timer);
   }, [step, countdown]);
 
-  function handleCheckUsername(e: React.FormEvent) {
+  useEffect(() => {
+    if (step !== 1) return;
+
+    const cleanUsername = username.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
+      setUsernameAvailability("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    setUsernameAvailability("checking");
+    const timer = window.setTimeout(() => {
+      checkUsernameAvailability(cleanUsername, controller.signal)
+        .then(({ available }) => {
+          if (!controller.signal.aborted) {
+            setUsernameAvailability(available ? "available" : "taken");
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setUsernameAvailability("error");
+        });
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [username, step]);
+
+  async function handleCheckUsername(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError("");
     const cleanUsername = username.trim().toLowerCase();
@@ -307,10 +340,21 @@ export function RegisterForm() {
 
     setUsername(cleanUsername);
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    setUsernameAvailability("checking");
+    try {
+      const { available } = await checkUsernameAvailability(cleanUsername);
+      if (!available) {
+        setUsernameAvailability("taken");
+        return;
+      }
+      setUsernameAvailability("available");
       setStep(2);
-    }, 400);
+    } catch {
+      setUsernameAvailability("error");
+      setSubmitError("Couldn't check username availability. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleGetOtp(e: React.FormEvent) {
@@ -407,17 +451,38 @@ export function RegisterForm() {
             <input
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setSubmitError("");
+              }}
               placeholder="Choose a username"
               maxLength={30}
-              className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 sm:py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/15"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 sm:py-3 font-['Inter',sans-serif] text-[16px] font-normal leading-[24px] text-[#0f1014] placeholder:font-['Inter',sans-serif] placeholder:text-[16px] placeholder:font-normal placeholder:leading-[24px] placeholder:text-[#0f1014] outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/15"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
               required
             />
-            <p className="mt-1 text-[11px] text-gray-400">
-              Username cannot be changed for 30 days.
+            <p
+              className={`mt-1 text-[11px] ${
+                usernameAvailability === "available"
+                  ? "text-emerald-600"
+                  : usernameAvailability === "taken" || usernameAvailability === "error"
+                    ? "text-red-600"
+                    : "text-gray-400"
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              {usernameAvailability === "checking"
+                ? "Checking username…"
+                : usernameAvailability === "available"
+                  ? `${username.trim().toLowerCase()} is available.`
+                  : usernameAvailability === "taken"
+                    ? "That username is already taken."
+                    : usernameAvailability === "error"
+                      ? "Couldn't check username availability. You can try again."
+                      : "Use 3–30 letters, numbers, or underscores."}
             </p>
           </div>
 
@@ -429,10 +494,10 @@ export function RegisterForm() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || usernameAvailability === "checking"}
             className="mt-3 w-full rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] py-3 text-[16px] font-medium leading-[24px] text-white font-['Inter',sans-serif] shadow-md shadow-purple-500/20 transition cursor-pointer disabled:opacity-60"
           >
-            {isLoading ? "Checking…" : "Check"}
+            {isLoading || usernameAvailability === "checking" ? "Checking…" : "Continue"}
           </button>
         </form>
       )}

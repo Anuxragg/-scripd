@@ -15,6 +15,11 @@ const profileResponseSchema = z.object({
   meta: z.unknown().optional(),
 });
 
+const usernameAvailabilityResponseSchema = z.object({
+  data: z.object({ available: z.boolean() }),
+  meta: z.unknown().optional(),
+});
+
 const logoutResponseSchema = z.object({
   data: z.object({ logged_out: z.boolean() }),
   meta: z.record(z.string(), z.unknown()),
@@ -96,6 +101,18 @@ export function register(input: RegisterInput): Promise<Profile> {
   return apiRequest("/api/v1/auth/register", profileResponseSchema, jsonRequest(input)).then(
     (response) => response.data,
   );
+}
+
+export function checkUsernameAvailability(
+  username: string,
+  signal?: AbortSignal,
+): Promise<{ available: boolean }> {
+  const query = new URLSearchParams({ username });
+  return apiRequest(
+    `/api/v1/auth/username-availability?${query.toString()}`,
+    usernameAvailabilityResponseSchema,
+    { signal },
+  ).then((response) => response.data);
 }
 
 export function login(input: LoginInput): Promise<Profile> {
