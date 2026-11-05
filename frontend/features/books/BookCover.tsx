@@ -24,7 +24,7 @@ export function BookCover({
     .map((author) => author.trim())
     .join("\u0000");
   const lookupKey = coverURL || `missing:${lookupISBN || ""}:${title}:${authorKey}`;
-  const preferredCoverURL = preferLargeOpenLibraryCover(coverURL);
+  const preferredCoverURL = optimizeBookCoverURL(coverURL);
   const activeFallback = fallback?.sourceKey === lookupKey ? fallback : undefined;
   const displayedURL = activeFallback ? activeFallback.url : preferredCoverURL;
   const canLookup = Boolean(lookupISBN || authors.some((author) => author.trim()));
@@ -39,12 +39,9 @@ export function BookCover({
     attemptedLookupRef.current = sourceKey;
     void getBookCoverByISBN({ title, authors, isbn13: lookupISBN })
       .then((fallbackURL) => {
-        if (!cancelled) {
-          setFallback((current) =>
-            current?.sourceKey === sourceKey
-              ? { sourceKey, url: fallbackURL }
-              : { sourceKey, url: fallbackURL },
-          );
+        if (!cancelled && fallbackURL) {
+          const optimized = optimizeBookCoverURL(fallbackURL);
+          setFallback({ sourceKey, url: optimized });
         }
       })
       .catch(() => {
@@ -58,23 +55,16 @@ export function BookCover({
 
   const handleImageError = (failedURL: string) => {
     const sourceKey = lookupKey;
-    if (coverURL && preferredCoverURL !== coverURL && failedURL === preferredCoverURL) {
-      setFallback({ sourceKey, url: coverURL });
-      return;
-    }
-    if (!coverURL || failedURL !== coverURL) {
-      setFallback({ sourceKey });
-      return;
-    }
-
-    setFallback({ sourceKey });
+    // Set fallback to undefined URL so we display typographic fallback while/if fetching
+    setFallback({ sourceKey, url: undefined });
     if (!canLookup) return;
 
     void getBookCoverByISBN({ title, authors, isbn13: lookupISBN })
       .then((fallbackURL) => {
-        if (fallbackURL === coverURL) return;
+        const optimized = optimizeBookCoverURL(fallbackURL);
+        if (optimized === failedURL) return;
         setFallback((current) =>
-          current?.sourceKey === sourceKey ? { sourceKey, url: fallbackURL } : current,
+          current?.sourceKey === sourceKey ? { sourceKey, url: optimized } : current,
         );
       })
       .catch(() => {
@@ -129,9 +119,34 @@ function extractISBN13(coverURL: string): string | undefined {
   return coverURL.match(/\/isbn\/(\d{13})(?:[-/.?]|$)/i)?.[1];
 }
 
-function preferLargeOpenLibraryCover(coverURL?: string): string | undefined {
-  if (!coverURL || !/^https?:\/\/covers\.openlibrary\.org\/b\//i.test(coverURL)) {
-    return coverURL;
+export function optimizeBookCoverURL(coverURL?: string): string | undefined {
+  if (!coverURL) {
+    return undefined;
   }
-  return coverURL.replace(/-[SM]\.jpg(?=[?#]|$)/i, "-L.jpg");
+
+  // 1. Google Books cover optimization: remove edge curl distortion and request highest resolution zoom=0
+  if (/books\.google\.com/i.test(coverURL) || /\.googleusercontent\.com/i.test(coverURL)) {
+    try {
+      const parsed = new URL(coverURL);
+      parsed.protocol = "https:";
+      parsed.searchParams.delete("edge");
+      if (parsed.searchParams.has("zoom")) {
+        parsed.searchParams.set("zoom", "0");
+      }
+      return parsed.toString();
+    } catch {
+      return coverURL.replace(/[?&]edge=curl/gi, "").replace(/zoom=[1-9]/gi, "zoom=0");
+    }
+  }
+
+  // 2. Open Library cover optimization: upgrade small/medium to -L.jpg and ensure ?default=false
+  if (/^https?:\/\/covers\.openlibrary\.org\/b\//i.test(coverURL)) {
+    let upgraded = coverURL.replace(/-[SM]\.jpg(?=[?#]|$)/i, "-L.jpg");
+    if (!upgraded.includes("default=")) {
+      upgraded += (upgraded.includes("?") ? "&" : "?") + "default=false";
+    }
+    return upgraded;
+  }
+
+  return coverURL;
 }

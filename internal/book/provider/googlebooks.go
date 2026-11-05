@@ -241,12 +241,13 @@ func secureImageURL(value string) string {
 		return ""
 	}
 	parsed.Scheme = "https"
-	if strings.EqualFold(parsed.Hostname(), "books.google.com") {
+	if strings.EqualFold(parsed.Hostname(), "books.google.com") || strings.HasSuffix(strings.ToLower(parsed.Hostname()), ".googleusercontent.com") {
 		query := parsed.Query()
+		query.Del("edge")
 		if query.Has("zoom") {
-			query.Set("zoom", "6")
-			parsed.RawQuery = query.Encode()
+			query.Set("zoom", "0")
 		}
+		parsed.RawQuery = query.Encode()
 	}
 	return parsed.String()
 }

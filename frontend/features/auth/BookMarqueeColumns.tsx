@@ -16,49 +16,49 @@ const COLUMN_1_BOOKS: BookItem[] = [
     id: "c1-1",
     title: "The Great Gatsby",
     author: "F. Scott Fitzgerald",
-    coverUrl: "https://covers.openlibrary.org/b/id/8231856-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8432047-L.jpg?default=false",
     fallbackBg: "from-amber-900/60 to-stone-900",
   },
   {
     id: "c1-2",
     title: "1984",
     author: "George Orwell",
-    coverUrl: "https://covers.openlibrary.org/b/id/8235113-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/7222246-L.jpg?default=false",
     fallbackBg: "from-red-950/60 to-stone-950",
   },
   {
     id: "c1-3",
     title: "To Kill a Mockingbird",
     author: "Harper Lee",
-    coverUrl: "https://covers.openlibrary.org/b/id/12847926-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8225261-L.jpg?default=false",
     fallbackBg: "from-blue-950/60 to-slate-950",
   },
   {
     id: "c1-4",
     title: "Dune",
     author: "Frank Herbert",
-    coverUrl: "https://covers.openlibrary.org/b/id/7222246-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8740578-L.jpg?default=false",
     fallbackBg: "from-orange-950/60 to-amber-950",
   },
   {
     id: "c1-5",
     title: "The Hobbit",
     author: "J.R.R. Tolkien",
-    coverUrl: "https://covers.openlibrary.org/b/id/12836262-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8406782-L.jpg?default=false",
     fallbackBg: "from-emerald-950/60 to-stone-950",
   },
   {
     id: "c1-6",
     title: "Pride and Prejudice",
     author: "Jane Austen",
-    coverUrl: "https://covers.openlibrary.org/b/id/10522964-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8258649-L.jpg?default=false",
     fallbackBg: "from-rose-950/60 to-neutral-950",
   },
   {
     id: "c1-7",
     title: "Frankenstein",
     author: "Mary Shelley",
-    coverUrl: "https://covers.openlibrary.org/b/id/8315147-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8315147-L.jpg?default=false",
     fallbackBg: "from-teal-950/60 to-neutral-950",
   },
 ];
@@ -68,49 +68,49 @@ const COLUMN_2_BOOKS: BookItem[] = [
     id: "c2-1",
     title: "Brave New World",
     author: "Aldous Huxley",
-    coverUrl: "https://covers.openlibrary.org/b/id/8235113-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8235113-L.jpg?default=false",
     fallbackBg: "from-indigo-950/60 to-zinc-950",
   },
   {
     id: "c2-2",
     title: "The Picture of Dorian Gray",
     author: "Oscar Wilde",
-    coverUrl: "https://covers.openlibrary.org/b/id/10522964-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/10522964-L.jpg?default=false",
     fallbackBg: "from-purple-950/60 to-neutral-950",
   },
   {
     id: "c2-3",
     title: "Sapiens",
     author: "Yuval Noah Harari",
-    coverUrl: "https://covers.openlibrary.org/b/id/8231856-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8367448-L.jpg?default=false",
     fallbackBg: "from-amber-950/60 to-stone-950",
   },
   {
     id: "c2-4",
     title: "Atomic Habits",
     author: "James Clear",
-    coverUrl: "https://covers.openlibrary.org/b/id/12847926-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/12539702-L.jpg?default=false",
     fallbackBg: "from-sky-950/60 to-slate-950",
   },
   {
     id: "c2-5",
     title: "The Alchemist",
     author: "Paulo Coelho",
-    coverUrl: "https://covers.openlibrary.org/b/id/12836262-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/7414780-L.jpg?default=false",
     fallbackBg: "from-yellow-950/60 to-stone-950",
   },
   {
     id: "c2-6",
-    title: "Little Women",
-    author: "Louisa May Alcott",
-    coverUrl: "https://covers.openlibrary.org/b/id/7222246-L.jpg",
+    title: "Harry Potter and the Philosopher's Stone",
+    author: "J.K. Rowling",
+    coverUrl: "https://covers.openlibrary.org/b/id/10521270-L.jpg?default=false",
     fallbackBg: "from-pink-950/60 to-neutral-950",
   },
   {
     id: "c2-7",
     title: "The Catcher in the Rye",
     author: "J.D. Salinger",
-    coverUrl: "https://covers.openlibrary.org/b/id/8315147-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8225631-L.jpg?default=false",
     fallbackBg: "from-red-950/60 to-stone-950",
   },
 ];
@@ -120,49 +120,49 @@ const COLUMN_3_BOOKS: BookItem[] = [
     id: "c3-1",
     title: "Fahrenheit 451",
     author: "Ray Bradbury",
-    coverUrl: "https://covers.openlibrary.org/b/id/12847926-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8780366-L.jpg?default=false",
     fallbackBg: "from-orange-950/60 to-stone-950",
   },
   {
     id: "c3-2",
     title: "The Metamorphosis",
     author: "Franz Kafka",
-    coverUrl: "https://covers.openlibrary.org/b/id/12836262-L.jpg",
+    coverUrl: "https://covers.openlibrary.org/b/id/8231856-L.jpg?default=false",
     fallbackBg: "from-zinc-900 to-black",
   },
   {
     id: "c3-3",
-    title: "Animal Farm",
-    author: "George Orwell",
-    coverUrl: "https://covers.openlibrary.org/b/id/8235113-L.jpg",
+    title: "Crime and Punishment",
+    author: "Fyodor Dostoevsky",
+    coverUrl: "https://covers.openlibrary.org/b/id/8235116-L.jpg?default=false",
     fallbackBg: "from-stone-900 to-black",
   },
   {
     id: "c3-4",
-    title: "The Lord of the Rings",
-    author: "J.R.R. Tolkien",
-    coverUrl: "https://covers.openlibrary.org/b/id/7222246-L.jpg",
+    title: "Rich Dad, Poor Dad",
+    author: "Robert T. Kiyosaki",
+    coverUrl: "https://covers.openlibrary.org/b/id/8315603-L.jpg?default=false",
     fallbackBg: "from-emerald-950/60 to-black",
   },
   {
     id: "c3-5",
-    title: "One Hundred Years of Solitude",
-    author: "Gabriel García Márquez",
-    coverUrl: "https://covers.openlibrary.org/b/id/10522964-L.jpg",
+    title: "The Psychology of Money",
+    author: "Morgan Housel",
+    coverUrl: "https://covers.openlibrary.org/b/id/10389354-L.jpg?default=false",
     fallbackBg: "from-amber-950/60 to-neutral-950",
   },
   {
     id: "c3-6",
-    title: "Slaughterhouse-Five",
-    author: "Kurt Vonnegut",
-    coverUrl: "https://covers.openlibrary.org/b/id/8315147-L.jpg",
+    title: "The 48 Laws of Power",
+    author: "Robert Greene",
+    coverUrl: "https://covers.openlibrary.org/b/id/6424160-L.jpg?default=false",
     fallbackBg: "from-violet-950/60 to-stone-950",
   },
   {
     id: "c3-7",
-    title: "Norwegian Wood",
-    author: "Haruki Murakami",
-    coverUrl: "https://covers.openlibrary.org/b/id/8231856-L.jpg",
+    title: "The Hunger Games",
+    author: "Suzanne Collins",
+    coverUrl: "https://covers.openlibrary.org/b/id/12646537-L.jpg?default=false",
     fallbackBg: "from-rose-950/60 to-stone-950",
   },
 ];
@@ -195,32 +195,50 @@ function getRecentCovers(): string[] {
   }
 }
 
-async function fetchOpenLibraryPage(page: number, columnIndex: number): Promise<BookItem[]> {
-  const url = new URL("https://openlibrary.org/search.json");
-  url.searchParams.set("q", "fiction");
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", "25");
-  url.searchParams.set("fields", "key,title,author_name,cover_i");
+async function fetchTrendingBooks(): Promise<BookItem[]> {
+  const endpoints = [
+    "https://openlibrary.org/trending/weekly.json?limit=40",
+    "https://openlibrary.org/trending/daily.json?limit=40",
+    "https://openlibrary.org/trending/monthly.json?limit=40",
+  ];
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, { cache: "no-store" });
+      if (!response.ok) continue;
+      const payload: {
+        works?: Array<{
+          key?: string;
+          title?: string;
+          author_name?: string[];
+          cover_i?: number;
+        }>;
+      } = await response.json();
+      if (!Array.isArray(payload.works) || payload.works.length === 0) continue;
 
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) return [];
+      const items: BookItem[] = payload.works.flatMap((work, index) => {
+        if (typeof work.cover_i !== "number" || work.cover_i <= 0) return [];
+        return [
+          {
+            id: typeof work.key === "string" ? work.key : String(work.cover_i),
+            title: typeof work.title === "string" ? work.title : "Untitled",
+            author:
+              Array.isArray(work.author_name) && typeof work.author_name[0] === "string"
+                ? work.author_name[0]
+                : "Unknown Author",
+            coverUrl: `https://covers.openlibrary.org/b/id/${work.cover_i}-L.jpg?default=false`,
+            fallbackBg: FALLBACK_BACKGROUNDS[index % 3],
+          },
+        ];
+      });
 
-  const payload: { docs?: Record<string, unknown>[] } = await response.json();
-  return (payload.docs ?? []).flatMap((doc) => {
-    if (typeof doc.cover_i !== "number") return [];
-    return [
-      {
-        id: typeof doc.key === "string" ? doc.key : String(doc.cover_i),
-        title: typeof doc.title === "string" ? doc.title : "Untitled",
-        author:
-          Array.isArray(doc.author_name) && typeof doc.author_name[0] === "string"
-            ? doc.author_name[0]
-            : "Unknown Author",
-        coverUrl: `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`,
-        fallbackBg: FALLBACK_BACKGROUNDS[columnIndex],
-      },
-    ];
-  });
+      if (items.length >= 15) {
+        return items;
+      }
+    } catch {
+      // Try next endpoint or fall back
+    }
+  }
+  return [];
 }
 
 function BookCard({ book }: { book: BookItem }) {
@@ -289,26 +307,24 @@ export function BookMarqueeColumns() {
   useEffect(() => {
     async function loadFreshCovers() {
       try {
-        const pages = shuffle(Array.from({ length: 100 }, (_, index) => index + 1)).slice(0, 3);
-        const results = await Promise.all(
-          pages.map((page, columnIndex) => fetchOpenLibraryPage(page, columnIndex)),
-        );
-        const uniqueCovers = new Map<string, BookItem>();
+        const trendingBooks = await fetchTrendingBooks();
+        const basePool = [...COLUMN_1_BOOKS, ...COLUMN_2_BOOKS, ...COLUMN_3_BOOKS];
+        const combined = trendingBooks.length > 0 ? [...trendingBooks, ...basePool] : basePool;
 
-        results.forEach((result, columnIndex) => {
-          result.forEach((book) => {
-            if (uniqueCovers.has(book.coverUrl)) return;
+        const uniqueCovers = new Map<string, BookItem>();
+        combined.forEach((book, index) => {
+          if (!uniqueCovers.has(book.coverUrl)) {
             uniqueCovers.set(book.coverUrl, {
               ...book,
-              fallbackBg: FALLBACK_BACKGROUNDS[columnIndex],
+              fallbackBg: FALLBACK_BACKGROUNDS[index % 3],
             });
-          });
+          }
         });
 
         const candidates = shuffle([...uniqueCovers.values()]);
         const recentCovers = getRecentCovers();
         const freshCandidates = candidates.filter((book) => !recentCovers.includes(book.coverUrl));
-        const selectionPool = freshCandidates.length > 0 ? freshCandidates : candidates;
+        const selectionPool = freshCandidates.length >= 21 ? freshCandidates : candidates;
         const selectedBooks = selectionPool.slice(0, 21);
         if (selectedBooks.length === 0) {
           setColumns([COLUMN_1_BOOKS, COLUMN_2_BOOKS, COLUMN_3_BOOKS]);
