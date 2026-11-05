@@ -44,9 +44,9 @@ function EditProfileFields({
 
   const nameParts = (profile.display_name || "").trim().split(/\s+/);
   const [username, setUsername] = useState(profile.username);
-  const [usernameAvailability, setUsernameAvailability] = useState<
-    "idle" | "checking" | "available" | "taken" | "error" | "current"
-  >("current");
+  const [lookupStatus, setLookupStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "error"
+  >("idle");
   const [givenName, setGivenName] = useState(() => nameParts[0] || "");
   const [familyName, setFamilyName] = useState(() => nameParts.slice(1).join(" ") || "");
   const [bio, setBio] = useState(() => profile.bio || "");
@@ -97,31 +97,27 @@ function EditProfileFields({
   const normalizedUsername = username.trim().toLowerCase();
   const usernameIsValid = /^[a-z0-9_]{3,30}$/.test(normalizedUsername);
   const isCurrentUsername = normalizedUsername === profile.username.toLowerCase();
+  const usernameAvailability: "idle" | "checking" | "available" | "taken" | "error" | "current" =
+    isCurrentUsername ? "current" : !usernameIsValid ? "idle" : lookupStatus;
   const usernameCanBeSaved =
     usernameIsValid && (isCurrentUsername || usernameAvailability === "available");
 
   useEffect(() => {
-    const cleanUsername = username.trim().toLowerCase();
-    if (cleanUsername === profile.username.toLowerCase()) {
-      setUsernameAvailability("current");
-      return;
-    }
-    if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
-      setUsernameAvailability("idle");
+    if (isCurrentUsername || !usernameIsValid) {
       return;
     }
 
     const controller = new AbortController();
-    setUsernameAvailability("checking");
     const timer = window.setTimeout(() => {
-      checkUsernameAvailability(cleanUsername, controller.signal)
+      setLookupStatus("checking");
+      checkUsernameAvailability(normalizedUsername, controller.signal)
         .then(({ available }) => {
           if (!controller.signal.aborted) {
-            setUsernameAvailability(available ? "available" : "taken");
+            setLookupStatus(available ? "available" : "taken");
           }
         })
         .catch(() => {
-          if (!controller.signal.aborted) setUsernameAvailability("error");
+          if (!controller.signal.aborted) setLookupStatus("error");
         });
     }, 350);
 
@@ -129,7 +125,7 @@ function EditProfileFields({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [username, profile.username]);
+  }, [normalizedUsername, isCurrentUsername, usernameIsValid]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -171,20 +167,20 @@ function EditProfileFields({
 
     try {
       if (!isCurrentUsername) {
-        setUsernameAvailability("checking");
+        setLookupStatus("checking");
         try {
           const { available } = await checkUsernameAvailability(normalizedUsername);
           if (!available) {
-            setUsernameAvailability("taken");
+            setLookupStatus("taken");
             setStatusMessage({
               type: "error",
               text: "That username is already taken. Please choose another.",
             });
             return;
           }
-          setUsernameAvailability("available");
+          setLookupStatus("available");
         } catch {
-          setUsernameAvailability("error");
+          setLookupStatus("error");
           setStatusMessage({
             type: "error",
             text: "Couldn't check username availability. Please try again.",
@@ -242,7 +238,7 @@ function EditProfileFields({
     } catch (err) {
       setIsUploadingPhoto(false);
       if (err instanceof ApiError && err.status === 409) {
-        setUsernameAvailability("taken");
+        setLookupStatus("taken");
         setStatusMessage({
           type: "error",
           text: "That username was just taken. Please choose another.",
@@ -381,6 +377,7 @@ function EditProfileFields({
                   value={username}
                   onChange={(e) => {
                     setUsername(e.target.value);
+                    setLookupStatus("idle");
                     setStatusMessage(null);
                   }}
                   maxLength={30}

@@ -123,8 +123,9 @@ export function useRemoveFavoriteBook(username: string) {
     onSuccess: async (_result, openLibraryKey) => {
       queryClient.setQueryData<PublicProfile>(profileKey, (current) => {
         if (!current) return current;
-        const remainingFavorites = current.favorite_books
-          .filter((book) => book.open_library_key !== openLibraryKey);
+        const remainingFavorites = current.favorite_books.filter(
+          (book) => book.open_library_key !== openLibraryKey,
+        );
         return { ...current, favorite_books: remainingFavorites };
       });
       await queryClient.invalidateQueries({ queryKey: profileKey });

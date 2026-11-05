@@ -1167,10 +1167,10 @@ export function ProfilePage({ username }: { username: string }) {
                           key={book.id}
                           type="button"
                           role="option"
-                        aria-selected={false}
-                        disabled={addFavoriteBookMutation.isPending}
-                        onClick={() => void handleSelectFavoriteBook(book)}
-                        className="flex w-full items-baseline gap-1.5 overflow-hidden px-3 py-2 text-left transition hover:bg-[#00b32e] focus:bg-[#00b32e] focus:outline-none disabled:opacity-60"
+                          aria-selected={false}
+                          disabled={addFavoriteBookMutation.isPending}
+                          onClick={() => void handleSelectFavoriteBook(book)}
+                          className="flex w-full items-baseline gap-1.5 overflow-hidden px-3 py-2 text-left transition hover:bg-[#00b32e] focus:bg-[#00b32e] focus:outline-none disabled:opacity-60"
                         >
                           <span className="shrink-0 truncate text-[15px] leading-5 text-white">
                             {book.title}
@@ -1187,7 +1187,10 @@ export function ProfilePage({ username }: { username: string }) {
                       </div>
                     )}
                     {favoriteBookError && (
-                      <div role="alert" className="border-t border-red-200/30 bg-red-950/50 px-3 py-2.5 text-xs font-medium text-red-100">
+                      <div
+                        role="alert"
+                        className="border-t border-red-200/30 bg-red-950/50 px-3 py-2.5 text-xs font-medium text-red-100"
+                      >
                         {favoriteBookError}
                       </div>
                     )}
@@ -1196,10 +1199,11 @@ export function ProfilePage({ username }: { username: string }) {
                       onClick={() => setIsFavoriteBookModalOpen(false)}
                       className="block border-t border-[#8292a0] bg-[#45596a] px-3 py-2.5 text-xs text-[#d4dde5] hover:text-white"
                     >
-                      Book not here? <span className="font-semibold underline">Browse the catalog.</span>
+                      Book not here?{" "}
+                      <span className="font-semibold underline">Browse the catalog.</span>
                     </Link>
                   </div>
-              )}
+                )}
               </div>
             </div>
           </div>

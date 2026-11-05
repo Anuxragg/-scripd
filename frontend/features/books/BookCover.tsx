@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getBookCoverByISBN } from "@/features/books/api";
 
 export function BookCover({
@@ -19,24 +19,31 @@ export function BookCover({
 }) {
   const [fallback, setFallback] = useState<{ sourceKey: string; url?: string }>();
   const lookupISBN = normalizeISBN13(isbn13) || (coverURL ? extractISBN13(coverURL) : undefined);
-  const authorKey = authors.slice(0, 5).map((author) => author.trim()).join("\u0000");
+  const authorKey = authors
+    .slice(0, 5)
+    .map((author) => author.trim())
+    .join("\u0000");
   const lookupKey = coverURL || `missing:${lookupISBN || ""}:${title}:${authorKey}`;
   const preferredCoverURL = preferLargeOpenLibraryCover(coverURL);
   const activeFallback = fallback?.sourceKey === lookupKey ? fallback : undefined;
   const displayedURL = activeFallback ? activeFallback.url : preferredCoverURL;
   const canLookup = Boolean(lookupISBN || authors.some((author) => author.trim()));
+  const attemptedLookupRef = useRef<string>("");
 
   useEffect(() => {
-    if (coverURL || !canLookup || activeFallback) return;
+    if (coverURL || !canLookup || activeFallback || attemptedLookupRef.current === lookupKey)
+      return;
 
     let cancelled = false;
     const sourceKey = lookupKey;
-    setFallback({ sourceKey });
+    attemptedLookupRef.current = sourceKey;
     void getBookCoverByISBN({ title, authors, isbn13: lookupISBN })
       .then((fallbackURL) => {
         if (!cancelled) {
           setFallback((current) =>
-            current?.sourceKey === sourceKey ? { sourceKey, url: fallbackURL } : current,
+            current?.sourceKey === sourceKey
+              ? { sourceKey, url: fallbackURL }
+              : { sourceKey, url: fallbackURL },
           );
         }
       })

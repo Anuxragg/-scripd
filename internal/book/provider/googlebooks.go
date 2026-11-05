@@ -159,7 +159,7 @@ func (p *GoogleBooks) search(ctx context.Context, query string) ([]googleVolume,
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Google Books returned HTTP %d", response.StatusCode)
+		return nil, fmt.Errorf("google books returned HTTP %d", response.StatusCode)
 	}
 	var result struct {
 		Items []googleVolume `json:"items"`

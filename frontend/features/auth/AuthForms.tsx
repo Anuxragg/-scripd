@@ -300,13 +300,12 @@ export function RegisterForm() {
 
     const cleanUsername = username.trim().toLowerCase();
     if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
-      setUsernameAvailability("idle");
       return;
     }
 
     const controller = new AbortController();
-    setUsernameAvailability("checking");
     const timer = window.setTimeout(() => {
+      setUsernameAvailability("checking");
       checkUsernameAvailability(cleanUsername, controller.signal)
         .then(({ available }) => {
           if (!controller.signal.aborted) {
@@ -453,6 +452,7 @@ export function RegisterForm() {
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
+                setUsernameAvailability("idle");
                 setSubmitError("");
               }}
               placeholder="Choose a username"

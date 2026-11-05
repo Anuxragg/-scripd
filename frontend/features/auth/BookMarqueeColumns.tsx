@@ -329,7 +329,9 @@ export function BookMarqueeColumns() {
         try {
           localStorage.setItem(
             RECENT_COVERS_KEY,
-            JSON.stringify([...selectedBooks.map((book) => book.coverUrl), ...recentCovers].slice(0, 84)),
+            JSON.stringify(
+              [...selectedBooks.map((book) => book.coverUrl), ...recentCovers].slice(0, 84),
+            ),
           );
         } catch {
           // Random selections still work if browser storage is unavailable.
