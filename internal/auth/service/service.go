@@ -49,6 +49,7 @@ const (
 )
 
 type Store interface {
+	UsernameAvailable(context.Context, string) (bool, error)
 	CreateUserWithSession(context.Context, authdomain.User, []byte, time.Time, []byte, time.Time) (authdomain.User, string, error)
 	GetUserByIdentifier(context.Context, string) (authdomain.User, error)
 	GetUserForSession(context.Context, string, string) (authdomain.User, error)
@@ -177,6 +178,14 @@ func (s *Service) Register(ctx context.Context, username, email, displayName, pa
 	}
 	result.NotificationError = s.sendVerification(ctx, user.Email, verificationToken)
 	return result, nil
+}
+
+func (s *Service) CheckUsernameAvailability(ctx context.Context, username string) (bool, error) {
+	username = strings.ToLower(strings.TrimSpace(username))
+	if !usernamePattern.MatchString(username) {
+		return false, ErrInvalidInput
+	}
+	return s.store.UsernameAvailable(ctx, username)
 }
 
 func (s *Service) VerifyEmail(ctx context.Context, token string) error {

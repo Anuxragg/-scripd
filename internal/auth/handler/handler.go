@@ -27,6 +27,7 @@ const (
 )
 
 type authService interface {
+	CheckUsernameAvailability(context.Context, string) (bool, error)
 	Register(context.Context, string, string, string, string) (service.SessionResult, error)
 	Login(context.Context, string, string) (service.SessionResult, error)
 	Refresh(context.Context, string) (service.SessionResult, error)
@@ -95,6 +96,7 @@ func New(service authService, secureCookies bool, origins []string, log zerolog.
 func (h *Handler) RegisterRoutes(router chi.Router) {
 	router.Route("/auth", func(authRouter chi.Router) {
 		authRouter.Use(noStore)
+		authRouter.With(platformmiddleware.RateLimit(60, 15*time.Minute)).Get("/username-availability", h.CheckUsernameAvailability)
 		authRouter.With(platformmiddleware.RateLimit(5, time.Hour)).Post("/register", h.Register)
 		authRouter.With(platformmiddleware.RateLimit(10, 15*time.Minute)).Post("/login", h.Login)
 		authRouter.With(platformmiddleware.RateLimit(30, 15*time.Minute)).Post("/refresh", h.Refresh)
@@ -107,6 +109,16 @@ func (h *Handler) RegisterRoutes(router chi.Router) {
 		authRouter.With(platformmiddleware.RateLimit(10, 15*time.Minute)).Post("/reset-password", h.ResetPassword)
 		authRouter.Get("/me", h.Me)
 	})
+}
+
+func (h *Handler) CheckUsernameAvailability(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	available, err := h.service.CheckUsernameAvailability(r.Context(), username)
+	if err != nil {
+		h.writeFailure(w, r, err)
+		return
+	}
+	response.WriteJSON(w, http.StatusOK, map[string]bool{"available": available})
 }
 
 func noStore(next http.Handler) http.Handler {

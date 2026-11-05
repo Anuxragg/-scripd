@@ -136,6 +136,60 @@ func (p *Postgres) GetByID(ctx context.Context, id string) (book.Book, error) {
 	return result, nil
 }
 
+func (p *Postgres) GetDescriptionCache(ctx context.Context, lookupKey string) (book.DescriptionCacheEntry, bool, error) {
+	var result book.DescriptionCacheEntry
+	err := p.pool.QueryRow(ctx, `
+		SELECT lookup_key, title, authors, COALESCE(isbn13, ''), description, source, expires_at
+		FROM book_description_cache
+		WHERE lookup_key = $1 AND expires_at > now()
+	`, lookupKey).Scan(
+		&result.LookupKey, &result.Title, &result.Authors, &result.ISBN13,
+		&result.Description, &result.Source, &result.ExpiresAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		_, _ = p.pool.Exec(ctx, `
+			WITH expired AS (
+				SELECT ctid FROM book_description_cache
+				WHERE expires_at <= now()
+				ORDER BY expires_at
+				LIMIT 100
+			)
+			DELETE FROM book_description_cache AS cache
+			USING expired
+			WHERE cache.ctid = expired.ctid
+		`)
+		return book.DescriptionCacheEntry{}, false, nil
+	}
+	if err != nil {
+		return book.DescriptionCacheEntry{}, false, fmt.Errorf("get book description cache: %w", err)
+	}
+	return result, true, nil
+}
+
+func (p *Postgres) UpsertDescriptionCache(ctx context.Context, entry book.DescriptionCacheEntry) error {
+	if entry.Authors == nil {
+		entry.Authors = []string{}
+	}
+	_, err := p.pool.Exec(ctx, `
+		INSERT INTO book_description_cache (
+			lookup_key, title, authors, isbn13, description, source, expires_at
+		)
+		VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, $7)
+		ON CONFLICT (lookup_key) DO UPDATE SET
+			title = EXCLUDED.title,
+			authors = EXCLUDED.authors,
+			isbn13 = EXCLUDED.isbn13,
+			description = EXCLUDED.description,
+			source = EXCLUDED.source,
+			fetched_at = now(),
+			expires_at = EXCLUDED.expires_at
+	`, entry.LookupKey, entry.Title, entry.Authors, entry.ISBN13, entry.Description, entry.Source, entry.ExpiresAt)
+	if err != nil {
+		return fmt.Errorf("upsert book description cache: %w", err)
+	}
+	return nil
+}
+
 type rowScanner interface {
 	Scan(...any) error
 }

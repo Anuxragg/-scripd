@@ -42,7 +42,7 @@ func TestSearchRequestsBoundedFieldsAndNormalizesWorks(t *testing.T) {
 	require.Equal(t, []string{"J. R. R. Tolkien"}, result.Books[0].Authors)
 	require.Equal(t, "9780385472579", *result.Books[0].ISBN13)
 	require.Equal(t, 1937, *result.Books[0].PublishedYear)
-	require.Equal(t, "https://covers.openlibrary.org/b/id/42-M.jpg?default=false", *result.Books[0].CoverURL)
+	require.Equal(t, "https://covers.openlibrary.org/b/id/42-L.jpg?default=false", *result.Books[0].CoverURL)
 	require.Contains(t, string(result.Books[0].RawMetadata), `"key":"/works/OL123W"`)
 	require.Equal(t, "OL124W", result.Books[1].OpenLibraryKey)
 }

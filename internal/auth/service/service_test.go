@@ -119,6 +119,10 @@ func newMemoryStore() *memoryStore {
 	return &memoryStore{sessions: make(map[string]memorySession)}
 }
 
+func (s *memoryStore) UsernameAvailable(_ context.Context, username string) (bool, error) {
+	return s.user.ID == "" || !strings.EqualFold(s.user.Username, username), nil
+}
+
 func (s *memoryStore) CreateUserWithSession(_ context.Context, user authdomain.User, tokenHash []byte, expiresAt time.Time, verificationHash []byte, _ time.Time) (authdomain.User, string, error) {
 	if s.user.ID != "" {
 		if s.user.Username == user.Username {

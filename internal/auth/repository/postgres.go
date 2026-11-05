@@ -20,6 +20,18 @@ func NewPostgres(pool *pgxpool.Pool) *Postgres {
 	return &Postgres{pool: pool}
 }
 
+func (r *Postgres) UsernameAvailable(ctx context.Context, username string) (bool, error) {
+	var available bool
+	err := r.pool.QueryRow(ctx, `
+		SELECT NOT EXISTS (
+			SELECT 1 FROM users WHERE lower(username) = lower($1)
+		)`, username).Scan(&available)
+	if err != nil {
+		return false, fmt.Errorf("check username availability: %w", err)
+	}
+	return available, nil
+}
+
 type queryRower interface {
 	QueryRow(context.Context, string, ...any) pgx.Row
 }
