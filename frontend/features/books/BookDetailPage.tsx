@@ -366,9 +366,10 @@ export function BookDetailPage({
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 md:pt-10">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 items-start">
           {/* Left Column: Book Cover Poster + Meta, Title, Overview */}
+          <div className="min-w-0 space-y-8">
           <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
             {/* Book Cover Poster */}
-            <div className="shrink-0 w-36 sm:w-44 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/10 ring-1 ring-black/80 bg-[#161922]">
+            <div className="shrink-0 w-36 sm:w-44 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/10 ring-1 ring-black/80 bg-[#161922] self-start lg:sticky lg:top-24">
               <BookCover
                 className="h-full w-full object-cover"
                 coverURL={coverURL}
@@ -454,7 +455,21 @@ export function BookDetailPage({
                   })}
                 </div>
               </div>
+
+              {/* Reviews sit directly below the writer/contributors details. */}
+              <section className="mt-8 border-t border-white/5 pt-6">
+                <BookReviewsSection
+                  bookID={bookID}
+                  bookTitle={title}
+                  bookYear={
+                    typeof publishedYear === "number" || /^\d{4}$/.test(String(publishedYear))
+                      ? String(publishedYear)
+                      : undefined
+                  }
+                />
+              </section>
             </div>
+          </div>
           </div>
 
           {/* Right Column: Rating Box & Where To Read */}
@@ -603,26 +618,6 @@ export function BookDetailPage({
 
             {/* Where to Read & Listen Section (Matches 280px width) */}
             <WhereToReadSection title={title} authorNames={authorNames} />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Reader Reviews & Discussions */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mt-12 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 items-start">
-          {/* Left Column (Reviews) */}
-          <div className="space-y-12">
-            <section className="border-t border-white/5 pt-10">
-              <BookReviewsSection
-                bookID={bookID}
-                bookTitle={title}
-                bookYear={
-                  typeof publishedYear === "number" || /^\d{4}$/.test(String(publishedYear))
-                    ? String(publishedYear)
-                    : undefined
-                }
-              />
-            </section>
           </div>
         </div>
       </div>

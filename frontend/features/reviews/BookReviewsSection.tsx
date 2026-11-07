@@ -3,7 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Flame, Heart, Laugh, PartyPopper, Sparkles, ThumbsUp } from "lucide-react";
+import {
+  ArrowDownUp,
+  ChevronDown,
+  Flame,
+  Heart,
+  Laugh,
+  PartyPopper,
+  Sparkles,
+  ThumbsUp,
+} from "lucide-react";
 import { Reactions, type Reaction, type ReactionOption } from "@/components/ui/reactions";
 import { useCurrentUser } from "@/features/auth/hooks";
 import {
@@ -353,9 +362,9 @@ export function BookReviewsSection({
 
   // Filters State
   const [sortBy, setSortBy] = useState<"liked" | "recent">("liked");
-  const [showSpoilers, setShowSpoilers] = useState(false);
   const [followingOnly, setFollowingOnly] = useState(false);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [revealedSpoilerIds, setRevealedSpoilerIds] = useState<string[]>([]);
 
   // Replies Thread & Comments State
   const [openRepliesIds, setOpenRepliesIds] = useState<string[]>([]);
@@ -712,9 +721,9 @@ export function BookReviewsSection({
       {/* 2. User Reviews Section */}
       <section>
         {/* Header & Filter Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <div className="flex w-full items-center justify-between gap-4 mb-6 overflow-x-auto no-scrollbar">
+          <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
+            <h2 className="whitespace-nowrap text-xl sm:text-2xl font-bold text-white tracking-tight">
               User Reviews
             </h2>
             {isHydrated && user && displayedReviews.length > 0 && (
@@ -728,44 +737,32 @@ export function BookReviewsSection({
           </div>
 
           {user && (
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex shrink-0 flex-nowrap items-center gap-2.5 whitespace-nowrap">
               {/* Sort Dropdown */}
-              <div className="relative">
+              <div className="relative shrink-0">
+                <ArrowDownUp className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as "liked" | "recent")}
-                  className="appearance-none rounded-xl border border-white/10 bg-[#161a22] pl-3.5 pr-8 py-1.5 text-xs font-semibold text-white outline-none cursor-pointer hover:border-white/20 transition"
+                  className="h-9 appearance-none rounded-full border border-white/10 bg-[#161a22] pl-9 pr-9 text-[13px] font-medium leading-4 text-zinc-100 font-[Inter,sans-serif] outline-none cursor-pointer hover:border-white/20 focus-visible:border-white/30 focus-visible:ring-2 focus-visible:ring-white/10 transition"
                 >
                   <option value="liked" className="bg-[#161a22] text-white">
-                    ↓↑ Most Liked
+                    Most liked
                   </option>
                   <option value="recent" className="bg-[#161a22] text-white">
-                    ↓↑ Recent
+                    Most recent
                   </option>
                 </select>
-                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]">
-                  ▼
-                </span>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
               </div>
 
-              {/* Show Spoilers Toggle */}
-              <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#161a22] px-3.5 py-1.5 text-xs text-zinc-300 cursor-pointer hover:border-white/20 transition select-none">
-                <input
-                  type="checkbox"
-                  checked={showSpoilers}
-                  onChange={(e) => setShowSpoilers(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-purple-500/50 bg-transparent text-[#9333ea] focus:ring-0 cursor-pointer"
-                />
-                <span>Show Spoilers</span>
-              </label>
-
               {/* Following Only Toggle */}
-              <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#161a22] px-3.5 py-1.5 text-xs text-zinc-300 cursor-pointer hover:border-white/20 transition select-none">
+              <label className="flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-[#161a22] px-3 text-[13px] font-medium leading-4 text-zinc-200 font-[Inter,sans-serif] cursor-pointer hover:border-white/20 hover:bg-[#1b2029] transition select-none">
                 <input
                   type="checkbox"
                   checked={followingOnly}
                   onChange={(e) => setFollowingOnly(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-purple-500/50 bg-transparent text-[#9333ea] focus:ring-0 cursor-pointer"
+                  className="h-3.5 w-3.5 rounded accent-[#00e054] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e054]/40 cursor-pointer"
                 />
                 <span>Following Only</span>
               </label>
@@ -850,7 +847,8 @@ export function BookReviewsSection({
                 const displayText =
                   isLongText && !isExpanded ? `${review.body.slice(0, 220)}...` : review.body;
 
-                const isSpoilerMasked = review.containsSpoilers && !showSpoilers;
+                const isSpoilerMasked =
+                  review.containsSpoilers && !revealedSpoilerIds.includes(review.id);
 
                 const isAuthor = Boolean(
                   (user && review.author.username.toLowerCase() === user.username.toLowerCase()) ||
@@ -963,11 +961,17 @@ export function BookReviewsSection({
                         {/* Review Body */}
                         <div className="mt-3.5">
                           {isSpoilerMasked ? (
-                            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-amber-300">
-                              <span>
-                                ⚠️ This review contains spoilers. Toggle &ldquo;Show Spoilers&rdquo;
-                                above to read.
-                              </span>
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-amber-300">
+                              <span>⚠️ This review contains spoilers.</span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setRevealedSpoilerIds((prev) => [...prev, review.id])
+                                }
+                                className="rounded-lg border border-amber-400/30 px-3 py-1.5 font-semibold text-amber-100 transition hover:bg-amber-400/10"
+                              >
+                                Reveal review
+                              </button>
                             </div>
                           ) : (
                             <p className="text-sm text-zinc-300 leading-relaxed font-normal whitespace-pre-line">
