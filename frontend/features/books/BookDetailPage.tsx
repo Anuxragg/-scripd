@@ -367,109 +367,109 @@ export function BookDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 items-start">
           {/* Left Column: Book Cover Poster + Meta, Title, Overview */}
           <div className="min-w-0 space-y-8">
-          <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
-            {/* Book Cover Poster */}
-            <div className="shrink-0 w-36 sm:w-44 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/10 ring-1 ring-black/80 bg-[#161922] self-start lg:sticky lg:top-24">
-              <BookCover
-                className="h-full w-full object-cover"
-                coverURL={coverURL}
-                isbn13={apiBook?.isbn13 ?? knownMatch?.isbn13}
-                title={title}
-                authors={authors}
-              />
-            </div>
-
-            {/* Meta, Title, Overview */}
-            <div className="flex-1 min-w-0 w-full">
-              {/* Type • Year • Pages */}
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-zinc-400">
-                <span>Book</span>
-                <span className="text-zinc-600">•</span>
-                <span>{publishedYear}</span>
-                <span className="text-zinc-600">•</span>
-                <span>{pages}</span>
-              </div>
-
-              {/* Book Title */}
-              <h1 className="mt-1.5 book-detail-title text-[28px] font-semibold leading-[28px] text-white">
-                {title}
-              </h1>
-
-              {subtitle && (
-                <p className="mt-1 text-sm sm:text-base text-zinc-400 font-medium">{subtitle}</p>
-              )}
-
-              {/* Overview Heading, Synopsis Paragraph & Capsules */}
-              <div className="mt-5 space-y-3">
-                <h2 className="book-overview-heading text-[20px] font-medium leading-[28px] text-[rgb(226,226,226)] tracking-normal">
-                  Overview
-                </h2>
-                <p className="book-overview-para text-[16px] font-normal leading-[26px] text-[rgb(179,179,179)]">
-                  {description ||
-                    (descriptionQuery.isLoading
-                      ? "Looking up the book overview…"
-                      : "Overview unavailable for this edition.")}
-                </p>
-
-                {/* Dynamic Genre / Subject Capsules */}
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2.5 pt-1.5">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="site-capsule bg-[#1a1d24] hover:bg-[#222630] border border-white/5 text-[rgb(225,230,240)] hover:text-white text-[15px] font-medium leading-[20px] px-4 py-2 rounded-xl transition cursor-default"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Writer & Contributors Section (Aligned with Overview) */}
-              <div className="mt-7 space-y-3">
-                <h2 className="book-overview-heading text-[20px] font-medium leading-[28px] text-[rgb(226,226,226)] tracking-normal">
-                  {authors.length > 1 ? "Authors & Contributors" : "Writer"}
-                </h2>
-                <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-2 no-scrollbar">
-                  {authors.map((authorName, index) => {
-                    const role = index === 0 ? "Author" : "Contributor";
-
-                    return (
-                      <div
-                        key={`${authorName}-${index}`}
-                        className="flex flex-col items-center shrink-0 w-20 sm:w-24 text-center group"
-                      >
-                        <AuthorAvatar name={authorName} olid={apiBook?.author_keys?.[index]} />
-                        <span
-                          className="font-semibold text-xs sm:text-sm text-white mt-2 truncate w-full"
-                          title={authorName}
-                        >
-                          {authorName}
-                        </span>
-                        <span className="text-[11px] text-zinc-400 truncate w-full mt-0.5">
-                          {role}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Reviews sit directly below the writer/contributors details. */}
-              <section className="mt-8 border-t border-white/5 pt-6">
-                <BookReviewsSection
-                  bookID={bookID}
-                  bookTitle={title}
-                  bookYear={
-                    typeof publishedYear === "number" || /^\d{4}$/.test(String(publishedYear))
-                      ? String(publishedYear)
-                      : undefined
-                  }
+            <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
+              {/* Book Cover Poster */}
+              <div className="shrink-0 w-36 sm:w-44 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/10 ring-1 ring-black/80 bg-[#161922] self-start lg:sticky lg:top-24">
+                <BookCover
+                  className="h-full w-full object-cover"
+                  coverURL={coverURL}
+                  isbn13={apiBook?.isbn13 ?? knownMatch?.isbn13}
+                  title={title}
+                  authors={authors}
                 />
-              </section>
+              </div>
+
+              {/* Meta, Title, Overview */}
+              <div className="flex-1 min-w-0 w-full">
+                {/* Type • Year • Pages */}
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-zinc-400">
+                  <span>Book</span>
+                  <span className="text-zinc-600">•</span>
+                  <span>{publishedYear}</span>
+                  <span className="text-zinc-600">•</span>
+                  <span>{pages}</span>
+                </div>
+
+                {/* Book Title */}
+                <h1 className="mt-1.5 book-detail-title text-[28px] font-semibold leading-[28px] text-white">
+                  {title}
+                </h1>
+
+                {subtitle && (
+                  <p className="mt-1 text-sm sm:text-base text-zinc-400 font-medium">{subtitle}</p>
+                )}
+
+                {/* Overview Heading, Synopsis Paragraph & Capsules */}
+                <div className="mt-5 space-y-3">
+                  <h2 className="book-overview-heading text-[20px] font-medium leading-[28px] text-[rgb(226,226,226)] tracking-normal">
+                    Overview
+                  </h2>
+                  <p className="book-overview-para text-[16px] font-normal leading-[26px] text-[rgb(179,179,179)]">
+                    {description ||
+                      (descriptionQuery.isLoading
+                        ? "Looking up the book overview…"
+                        : "Overview unavailable for this edition.")}
+                  </p>
+
+                  {/* Dynamic Genre / Subject Capsules */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2.5 pt-1.5">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="site-capsule bg-[#1a1d24] hover:bg-[#222630] border border-white/5 text-[rgb(225,230,240)] hover:text-white text-[15px] font-medium leading-[20px] px-4 py-2 rounded-xl transition cursor-default"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Writer & Contributors Section (Aligned with Overview) */}
+                <div className="mt-7 space-y-3">
+                  <h2 className="book-overview-heading text-[20px] font-medium leading-[28px] text-[rgb(226,226,226)] tracking-normal">
+                    {authors.length > 1 ? "Authors & Contributors" : "Writer"}
+                  </h2>
+                  <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-2 no-scrollbar">
+                    {authors.map((authorName, index) => {
+                      const role = index === 0 ? "Author" : "Contributor";
+
+                      return (
+                        <div
+                          key={`${authorName}-${index}`}
+                          className="flex flex-col items-center shrink-0 w-20 sm:w-24 text-center group"
+                        >
+                          <AuthorAvatar name={authorName} olid={apiBook?.author_keys?.[index]} />
+                          <span
+                            className="font-semibold text-xs sm:text-sm text-white mt-2 truncate w-full"
+                            title={authorName}
+                          >
+                            {authorName}
+                          </span>
+                          <span className="text-[11px] text-zinc-400 truncate w-full mt-0.5">
+                            {role}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Reviews sit directly below the writer/contributors details. */}
+                <section className="mt-8 border-t border-white/5 pt-6">
+                  <BookReviewsSection
+                    bookID={bookID}
+                    bookTitle={title}
+                    bookYear={
+                      typeof publishedYear === "number" || /^\d{4}$/.test(String(publishedYear))
+                        ? String(publishedYear)
+                        : undefined
+                    }
+                  />
+                </section>
+              </div>
             </div>
-          </div>
           </div>
 
           {/* Right Column: Rating Box & Where To Read */}
