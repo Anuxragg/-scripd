@@ -6,9 +6,11 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/mail"
 	"net/url"
 	"regexp"
@@ -28,6 +30,7 @@ var (
 	ErrInvalidSession           = errors.New("invalid session")
 	ErrInvalidVerificationToken = errors.New("invalid email verification token")
 	ErrInvalidResetToken        = errors.New("invalid or expired password reset token")
+	ErrInvalidGoogleToken       = errors.New("invalid google authentication token")
 	usernamePattern             = regexp.MustCompile(`^[a-z0-9_]{3,30}$`)
 	sessionIDPattern            = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 )
@@ -64,6 +67,7 @@ type Store interface {
 	UpdatePassword(context.Context, string, string) error
 	RevokeAllUserSessions(context.Context, string) error
 	DeleteUser(context.Context, string) error
+	GetOrCreateGoogleUser(context.Context, string, string, string, string) (authdomain.User, error)
 }
 
 type VerificationMailer interface {
@@ -84,6 +88,7 @@ type Service struct {
 	verificationMailer  VerificationMailer
 	passwordResetMailer PasswordResetMailer
 	webBaseURL          string
+	googleClientID      string
 }
 
 type Profile struct {
@@ -137,6 +142,12 @@ func WithPasswordReset(mailer PasswordResetMailer, webBaseURL string) Option {
 	return func(s *Service) {
 		s.passwordResetMailer = mailer
 		s.webBaseURL = strings.TrimRight(webBaseURL, "/")
+	}
+}
+
+func WithGoogleClientID(clientID string) Option {
+	return func(s *Service) {
+		s.googleClientID = strings.TrimSpace(clientID)
 	}
 }
 
@@ -307,6 +318,65 @@ func (s *Service) Login(ctx context.Context, identifier, password string) (Sessi
 	if !verifyPassword(password, user.PasswordHash) {
 		return SessionResult{}, ErrInvalidCredentials
 	}
+	return s.startSession(ctx, user)
+}
+
+type GoogleTokenInfo struct {
+	Iss           string `json:"iss"`
+	Sub           string `json:"sub"`
+	Aud           string `json:"aud"`
+	Email         string `json:"email"`
+	EmailVerified string `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	Error         string `json:"error_description"`
+}
+
+func (s *Service) LoginWithGoogle(ctx context.Context, idToken string) (SessionResult, error) {
+	idToken = strings.TrimSpace(idToken)
+	if idToken == "" {
+		return SessionResult{}, ErrInvalidGoogleToken
+	}
+
+	client := &http.Client{Timeout: 7 * time.Second}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://oauth2.googleapis.com/tokeninfo?id_token="+url.QueryEscape(idToken), nil)
+	if err != nil {
+		return SessionResult{}, fmt.Errorf("create google tokeninfo request: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return SessionResult{}, fmt.Errorf("request google tokeninfo: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return SessionResult{}, ErrInvalidGoogleToken
+	}
+
+	var info GoogleTokenInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return SessionResult{}, fmt.Errorf("decode google tokeninfo: %w", err)
+	}
+
+	if info.Sub == "" || info.Email == "" {
+		return SessionResult{}, ErrInvalidGoogleToken
+	}
+	if info.Iss != "accounts.google.com" && info.Iss != "https://accounts.google.com" {
+		return SessionResult{}, ErrInvalidGoogleToken
+	}
+	if info.EmailVerified != "true" && info.EmailVerified != "1" {
+		return SessionResult{}, errors.New("google email is not verified")
+	}
+	if s.googleClientID != "" && info.Aud != s.googleClientID {
+		return SessionResult{}, ErrInvalidGoogleToken
+	}
+
+	user, err := s.store.GetOrCreateGoogleUser(ctx, info.Sub, info.Email, info.Name, info.Picture)
+	if err != nil {
+		return SessionResult{}, fmt.Errorf("get or create google user: %w", err)
+	}
+
 	return s.startSession(ctx, user)
 }
 

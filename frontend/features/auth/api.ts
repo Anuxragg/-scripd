@@ -121,6 +121,12 @@ export function login(input: LoginInput): Promise<Profile> {
   );
 }
 
+export function loginWithGoogle(credential: string): Promise<Profile> {
+  return apiRequest("/api/v1/auth/google", profileResponseSchema, jsonRequest({ credential })).then(
+    (response) => response.data,
+  );
+}
+
 export function refreshSession(): Promise<Profile> {
   return apiRequest("/api/v1/auth/refresh", profileResponseSchema, { method: "POST" }).then(
     (response) => response.data,

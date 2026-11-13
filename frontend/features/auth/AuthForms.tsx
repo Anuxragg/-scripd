@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import { checkUsernameAvailability } from "@/features/auth/api";
 import { useLogin, useRegister } from "@/features/auth/hooks";
 import { sendSupabaseOtp, verifySupabaseOtp } from "@/lib/auth/supabaseAuth";
+import { GoogleLoginButton } from "@/features/auth/GoogleLoginButton";
 
 const loginSchema = z.object({
   identifier: z.string().trim().min(1, "Please enter your username or email"),
@@ -231,6 +232,15 @@ export function LoginForm() {
         >
           {loginMutation.isPending ? "Logging in…" : "Login"}
         </button>
+
+        <div className="relative my-4 flex items-center justify-center">
+          <div className="w-full border-t border-gray-200" />
+          <span className="absolute bg-white px-3 text-xs uppercase tracking-wider text-gray-500 font-medium">
+            or
+          </span>
+        </div>
+
+        <GoogleLoginButton mode="signin" />
 
         <div className="pt-2 text-center">
           <Link
@@ -499,6 +509,15 @@ export function RegisterForm() {
           >
             {isLoading || usernameAvailability === "checking" ? "Checking…" : "Continue"}
           </button>
+
+          <div className="relative my-4 flex items-center justify-center">
+            <div className="w-full border-t border-gray-200" />
+            <span className="absolute bg-white px-3 text-xs uppercase tracking-wider text-gray-500 font-medium">
+              or
+            </span>
+          </div>
+
+          <GoogleLoginButton mode="signup" />
         </form>
       )}
 

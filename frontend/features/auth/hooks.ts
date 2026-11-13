@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   currentUser,
   login,
+  loginWithGoogle,
   logout,
   resendEmailVerification,
   register,
@@ -37,6 +38,17 @@ export function useLogin() {
   return useMutation({
     mutationFn: (input: LoginInput) => login(input),
     onSuccess: (profile: Profile) => queryClient.setQueryData(currentUserKey, profile),
+  });
+}
+
+export function useGoogleLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (credential: string) => loginWithGoogle(credential),
+    onSuccess: (profile: Profile) => {
+      queryClient.setQueryData(currentUserKey, profile);
+      queryClient.invalidateQueries({ queryKey: currentUserKey });
+    },
   });
 }
 

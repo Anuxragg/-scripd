@@ -96,6 +96,11 @@ func (s *stubAuthService) Login(context.Context, string, string) (service.Sessio
 	return s.result, nil
 }
 
+func (s *stubAuthService) LoginWithGoogle(context.Context, string) (service.SessionResult, error) {
+	s.loginCalls++
+	return s.result, nil
+}
+
 func (s *stubAuthService) Refresh(context.Context, string) (service.SessionResult, error) {
 	return s.result, nil
 }

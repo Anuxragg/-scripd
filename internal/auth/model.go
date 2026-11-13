@@ -18,6 +18,8 @@ type User struct {
 	EmailVerified bool
 	DisplayName   string
 	PasswordHash  string
+	GoogleID      *string
+	AvatarURL     *string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }

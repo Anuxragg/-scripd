@@ -75,6 +75,7 @@ func run() error {
 	authSvc := authservice.New(authRepo, cfg.JWTAccessSecret,
 		authservice.WithEmailVerification(verificationMailer, cfg.WebBaseURL),
 		authservice.WithPasswordReset(verificationMailer, cfg.WebBaseURL),
+		authservice.WithGoogleClientID(cfg.GoogleClientID),
 	)
 	var authOpts []authhandler.Option
 	switch strings.ToLower(cfg.CookieSameSite) {

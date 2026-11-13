@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -386,6 +387,104 @@ func (r *Postgres) DeleteUser(ctx context.Context, userID string) error {
 		return authdomain.ErrNotFound
 	}
 	return nil
+}
+
+func (r *Postgres) GetOrCreateGoogleUser(ctx context.Context, googleID, email, name, avatarURL string) (authdomain.User, error) {
+	googleID = strings.TrimSpace(googleID)
+	email = strings.ToLower(strings.TrimSpace(email))
+	if googleID == "" || email == "" {
+		return authdomain.User{}, errors.New("google ID and email are required")
+	}
+
+	// 1. Check if user already exists with this google_id
+	query := `
+		SELECT id::text, username, email, COALESCE(display_name, ''),
+		       email_verified_at IS NOT NULL, created_at, updated_at
+		FROM users WHERE google_id = $1`
+	user, err := scanProfileUser(r.pool.QueryRow(ctx, query, googleID))
+	if err == nil {
+		return user, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return authdomain.User{}, fmt.Errorf("lookup user by google ID: %w", err)
+	}
+
+	// 2. Check if user exists by email -> link google_id
+	query = `
+		SELECT id::text, username, email, COALESCE(display_name, ''),
+		       email_verified_at IS NOT NULL, created_at, updated_at
+		FROM users WHERE lower(email) = lower($1)`
+	user, err = scanProfileUser(r.pool.QueryRow(ctx, query, email))
+	if err == nil {
+		updateQuery := `
+			UPDATE users
+			SET google_id = $1,
+			    email_verified_at = COALESCE(email_verified_at, now()),
+			    avatar_url = COALESCE(avatar_url, NULLIF($2, '')),
+			    updated_at = now()
+			WHERE id = $3::uuid`
+		_, execErr := r.pool.Exec(ctx, updateQuery, googleID, avatarURL, user.ID)
+		if execErr != nil {
+			return authdomain.User{}, fmt.Errorf("link google account to user: %w", execErr)
+		}
+		user.EmailVerified = true
+		return user, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return authdomain.User{}, fmt.Errorf("lookup user by email: %w", err)
+	}
+
+	// 3. Brand-new user: generate a clean unique username and insert
+	baseUsername := sanitizeUsername(email, name)
+	candidateUsername := baseUsername
+	for attempt := 0; attempt < 5; attempt++ {
+		if attempt > 0 {
+			candidateUsername = fmt.Sprintf("%s%d", baseUsername, 10+attempt*7)
+		}
+		insertQuery := `
+			INSERT INTO users (username, email, display_name, avatar_url, google_id, email_verified_at)
+			VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), $5, now())
+			RETURNING id::text, username, email, COALESCE(display_name, ''), true, created_at, updated_at`
+		user, err = scanProfileUser(r.pool.QueryRow(ctx, insertQuery, candidateUsername, email, strings.TrimSpace(name), avatarURL, googleID))
+		if err == nil {
+			return user, nil
+		}
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// Username collision, retry with different suffix
+			continue
+		}
+		return authdomain.User{}, fmt.Errorf("create user from google account: %w", err)
+	}
+
+	return authdomain.User{}, fmt.Errorf("could not generate unique username for google account: %s", email)
+}
+
+func sanitizeUsername(email, name string) string {
+	base := ""
+	if atIndex := strings.Index(email, "@"); atIndex > 0 {
+		base = email[:atIndex]
+	}
+	if base == "" && name != "" {
+		base = name
+	}
+	var cleaned strings.Builder
+	for _, r := range strings.ToLower(base) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+			cleaned.WriteRune(r)
+		}
+	}
+	res := cleaned.String()
+	if len(res) < 3 {
+		res = "user_" + res
+	}
+	if len(res) < 3 {
+		res = "user_reader"
+	}
+	if len(res) > 24 {
+		res = res[:24]
+	}
+	return res
 }
 
 func getUserByID(ctx context.Context, q queryRower, id string) (authdomain.User, error) {

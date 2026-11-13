@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,6 +31,7 @@ type authService interface {
 	CheckUsernameAvailability(context.Context, string) (bool, error)
 	Register(context.Context, string, string, string, string) (service.SessionResult, error)
 	Login(context.Context, string, string) (service.SessionResult, error)
+	LoginWithGoogle(context.Context, string) (service.SessionResult, error)
 	Refresh(context.Context, string) (service.SessionResult, error)
 	Logout(context.Context, string) error
 	CurrentUser(context.Context, string) (service.Profile, error)
@@ -94,6 +96,11 @@ type resetPasswordRequest struct {
 	NewPassword string `json:"new_password"`
 }
 
+type googleLoginRequest struct {
+	IDToken    string `json:"id_token,omitempty"`
+	Credential string `json:"credential,omitempty"`
+}
+
 func New(service authService, secureCookies bool, origins []string, log zerolog.Logger, opts ...Option) *Handler {
 	allowedOrigins := make(map[string]struct{}, len(origins))
 	for _, origin := range origins {
@@ -118,6 +125,7 @@ func (h *Handler) RegisterRoutes(router chi.Router) {
 		authRouter.With(platformmiddleware.RateLimit(60, 15*time.Minute)).Get("/username-availability", h.CheckUsernameAvailability)
 		authRouter.With(platformmiddleware.RateLimit(5, time.Hour)).Post("/register", h.Register)
 		authRouter.With(platformmiddleware.RateLimit(10, 15*time.Minute)).Post("/login", h.Login)
+		authRouter.With(platformmiddleware.RateLimit(15, 15*time.Minute)).Post("/google", h.GoogleLogin)
 		authRouter.With(platformmiddleware.RateLimit(30, 15*time.Minute)).Post("/refresh", h.Refresh)
 		authRouter.With(platformmiddleware.RateLimit(30, 15*time.Minute)).Post("/logout", h.Logout)
 		authRouter.With(platformmiddleware.RateLimit(10, 15*time.Minute)).Post("/email/verify", h.VerifyEmail)
@@ -231,6 +239,32 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := h.service.Login(r.Context(), request.Identifier, request.Password)
+	if err != nil {
+		h.writeFailure(w, r, err)
+		return
+	}
+	h.setSessionCookies(w, result)
+	response.WriteJSON(w, http.StatusOK, result.User)
+}
+
+func (h *Handler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
+	if !h.checkOrigin(w, r) {
+		return
+	}
+	var request googleLoginRequest
+	if !decodeJSON(w, r, &request) {
+		response.WriteError(w, r, http.StatusBadRequest, "invalid_request", "request body is invalid")
+		return
+	}
+	token := strings.TrimSpace(request.IDToken)
+	if token == "" {
+		token = strings.TrimSpace(request.Credential)
+	}
+	if token == "" {
+		response.WriteError(w, r, http.StatusBadRequest, "invalid_request", "google token is required")
+		return
+	}
+	result, err := h.service.LoginWithGoogle(r.Context(), token)
 	if err != nil {
 		h.writeFailure(w, r, err)
 		return
@@ -441,6 +475,8 @@ func (h *Handler) writeFailure(w http.ResponseWriter, r *http.Request, err error
 		response.WriteError(w, r, http.StatusConflict, "registration_unavailable", "account could not be created with those details")
 	case errors.Is(err, service.ErrInvalidCredentials):
 		response.WriteError(w, r, http.StatusUnauthorized, "invalid_credentials", "username or password is incorrect")
+	case errors.Is(err, service.ErrInvalidGoogleToken):
+		response.WriteError(w, r, http.StatusUnauthorized, "invalid_google_token", "google authentication token is invalid or expired")
 	case errors.Is(err, service.ErrInvalidSession):
 		response.WriteError(w, r, http.StatusUnauthorized, "invalid_session", "session is invalid or expired")
 	case errors.Is(err, service.ErrInvalidVerificationToken):

@@ -272,6 +272,26 @@ func (s *memoryStore) DeleteUser(_ context.Context, userID string) error {
 	return nil
 }
 
+func (s *memoryStore) GetOrCreateGoogleUser(_ context.Context, googleID, email, name, avatarURL string) (authdomain.User, error) {
+	if s.user.ID != "" && (s.user.Email == email || (s.user.GoogleID != nil && *s.user.GoogleID == googleID)) {
+		s.user.GoogleID = &googleID
+		s.user.EmailVerified = true
+		return s.user, nil
+	}
+	user := authdomain.User{
+		ID:            "7f5e4d3c-2b1a-4f09-8e7d-6c5b4a392817",
+		Username:      "google_user",
+		Email:         email,
+		DisplayName:   name,
+		GoogleID:      &googleID,
+		EmailVerified: true,
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
+	}
+	s.user = user
+	return user, nil
+}
+
 func (s *memoryStore) nextID() string {
 	s.nextSession++
 	return fmt.Sprintf("00000000-0000-4000-8000-%012x", s.nextSession)

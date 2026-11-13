@@ -31,6 +31,7 @@ type Config struct {
 	SMTPFrom           string
 	SMTPRequireTLS     bool
 	GoogleBooksAPIKey  string
+	GoogleClientID     string
 	CORSAllowedOrigins []string
 	CookieSameSite     string
 	RateLimitRequests  int
@@ -178,6 +179,7 @@ func Load() (Config, error) {
 		SMTPFrom:           env("SMTP_FROM", "Scripd <noreply@scripd.local>"),
 		SMTPRequireTLS:     smtpRequireTLS,
 		GoogleBooksAPIKey:  strings.TrimSpace(os.Getenv("GOOGLE_BOOKS_API_KEY")),
+		GoogleClientID:     strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID")),
 		CORSAllowedOrigins: corsOrigins,
 		CookieSameSite:     cookieSameSite,
 		RateLimitRequests:  rateLimitRequests,
