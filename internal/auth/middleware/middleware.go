@@ -69,6 +69,26 @@ func (m *Middleware) RequireUser(next http.Handler) http.Handler {
 	})
 }
 
+func (m *Middleware) OptionalUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie(AccessCookieName)
+		if err != nil || cookie.Value == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		authCtx, cancel := context.WithTimeout(r.Context(), authenticationTimeout)
+		defer cancel()
+		profile, err := m.authenticator.CurrentUser(authCtx, cookie.Value)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+		ctx := context.WithValue(r.Context(), userIDContextKey{}, profile.ID)
+		ctx = context.WithValue(ctx, emailVerifiedContextKey{}, profile.EmailVerified)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func (m *Middleware) RequireVerifiedUser(next http.Handler) http.Handler {
 	return m.RequireUser(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		verified, _ := r.Context().Value(emailVerifiedContextKey{}).(bool)
@@ -83,6 +103,10 @@ func (m *Middleware) RequireVerifiedUser(next http.Handler) http.Handler {
 func UserID(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(userIDContextKey{}).(string)
 	return userID, ok && userID != ""
+}
+
+func WithUserID(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, userIDContextKey{}, userID)
 }
 
 func (m *Middleware) originAllowed(r *http.Request) bool {

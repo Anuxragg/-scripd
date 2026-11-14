@@ -29,6 +29,9 @@ import (
 	followhandler "github.com/scripd-app/scripd/internal/follow/handler"
 	followrepository "github.com/scripd-app/scripd/internal/follow/repository"
 	followservice "github.com/scripd-app/scripd/internal/follow/service"
+	listhandler "github.com/scripd-app/scripd/internal/list/handler"
+	listrepository "github.com/scripd-app/scripd/internal/list/repository"
+	listservice "github.com/scripd-app/scripd/internal/list/service"
 	"github.com/scripd-app/scripd/internal/platform/config"
 	"github.com/scripd-app/scripd/internal/platform/db"
 	"github.com/scripd-app/scripd/internal/platform/email"
@@ -111,6 +114,9 @@ func run() error {
 	commentRepo := commentrepository.NewPostgres(pool)
 	commentSvc := commentservice.New(commentRepo)
 	commentHTTP := commenthandler.New(commentSvc, sessionMiddleware.RequireUser, sessionMiddleware.RequireVerifiedUser, log)
+	listRepo := listrepository.NewPostgres(pool)
+	listSvc := listservice.New(listRepo)
+	listHTTP := listhandler.New(listSvc, sessionMiddleware.RequireUser, sessionMiddleware.OptionalUser, log)
 	registerRoutes := func(router chi.Router) {
 		authHTTP.RegisterRoutes(router)
 		bookHTTP.RegisterRoutes(router)
@@ -120,6 +126,7 @@ func run() error {
 		followHTTP.RegisterRoutes(router)
 		feedHTTP.RegisterRoutes(router)
 		commentHTTP.RegisterRoutes(router)
+		listHTTP.RegisterRoutes(router)
 	}
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
