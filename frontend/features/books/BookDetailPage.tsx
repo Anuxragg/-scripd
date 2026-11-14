@@ -14,6 +14,7 @@ import { BookReviewsSection } from "@/features/reviews/BookReviewsSection";
 import { AuthorAvatar } from "@/features/books/AuthorAvatar";
 import { WhereToReadSection } from "@/features/books/WhereToReadSection";
 import { useClientStorage } from "@/lib/useClientStorage";
+import { AddToListModal } from "@/features/lists/AddToListModal";
 
 interface CatalogBook {
   id: string;
@@ -623,41 +624,17 @@ export function BookDetailPage({
       </div>
 
       {/* Collections Modal Dialog */}
-      {collectionsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-[#12151c] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Save to Collection</h3>
-              <button
-                type="button"
-                onClick={() => setCollectionsModalOpen(false)}
-                className="text-zinc-400 hover:text-white text-sm p-1"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-xs text-zinc-400">
-              Add <strong className="text-white">{title}</strong> to your curated lists.
-            </p>
-            <div className="space-y-2 pt-1">
-              {["Want to Read Shelf", "Favorites", "Best of the Year"].map((listName) => (
-                <button
-                  key={listName}
-                  type="button"
-                  onClick={() => {
-                    handleWantToRead();
-                    setCollectionsModalOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between rounded-xl border border-white/5 bg-[#181d26] px-3.5 py-2.5 text-xs font-medium text-white hover:border-[#9333ea]/50 hover:bg-[#1e2430] transition text-left"
-                >
-                  <span>{listName}</span>
-                  <span className="text-[#9333ea]">+</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <AddToListModal
+        bookID={
+          apiBook?.id &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiBook.id)
+            ? apiBook.id
+            : bookID
+        }
+        bookTitle={title}
+        open={collectionsModalOpen}
+        onClose={() => setCollectionsModalOpen(false)}
+      />
     </main>
   );
 }

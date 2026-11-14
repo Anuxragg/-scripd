@@ -590,6 +590,7 @@ export function SiteHeader({ theme = "light" }: { theme?: "dark" | "light" }) {
                           { label: "Home", href: "/feed" },
                           { label: "Profile", href: `/u/${profile.username}` },
                           { label: "Books", href: "/books" },
+                          { label: "Lists", href: `/u/${profile.username}` },
                           { label: "Diary", href: "/library" },
                           { label: "Reviews", href: `/u/${profile.username}` },
                           { label: "Likes", href: `/u/${profile.username}` },
