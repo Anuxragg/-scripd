@@ -20,8 +20,11 @@ import {
 import { useReadEntries } from "@/features/reads/hooks";
 import type { ReadEntry } from "@/features/reads/api";
 import { notifyStorageChange, subscribeStorage } from "@/lib/useClientStorage";
+import { useMyLists, useUserLists } from "@/features/lists/hooks";
+import { ListCard } from "@/features/lists/ListCard";
+import { CreateListModal } from "@/features/lists/CreateListModal";
 
-type TabKey = "profile" | "activity" | "books" | "diary" | "reviews" | "want_to_read";
+type TabKey = "profile" | "activity" | "books" | "diary" | "reviews" | "want_to_read" | "lists";
 
 export function ProfilePage({ username }: { username: string }) {
   const userQuery = useCurrentUser();
@@ -41,6 +44,7 @@ export function ProfilePage({ username }: { username: string }) {
   const [favoriteBookActionError, setFavoriteBookActionError] = useState("");
   const [debouncedFavoriteBookName, setDebouncedFavoriteBookName] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
+  const [createListOpen, setCreateListOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const favoriteBookSearch = useBookSearch(
     debouncedFavoriteBookName,
@@ -102,6 +106,11 @@ export function ProfilePage({ username }: { username: string }) {
   const currentUserID = userQuery.data?.id;
   const profile = profileQuery.data;
   const isOwner = Boolean(currentUserID && profile && currentUserID === profile.id);
+
+  const myListsQuery = useMyLists(isOwner);
+  const userListsQuery = useUserLists(username, !isOwner);
+  const displayLists = isOwner ? (myListsQuery.data ?? []) : (userListsQuery.data ?? []);
+  const listsLoading = isOwner ? myListsQuery.isLoading : userListsQuery.isLoading;
 
   // Load user's reads (for favorite books, recent activity, diary, want to read)
   const readsQuery = useReadEntries({ limit: 24 }, isOwner);
@@ -617,6 +626,7 @@ export function ProfilePage({ username }: { username: string }) {
               { key: "diary", label: "Diary" },
               { key: "reviews", label: "Reviews" },
               { key: "want_to_read", label: "Want to Read" },
+              { key: "lists", label: "Lists" },
             ] as const
           ).map((tab) => (
             <button
@@ -1057,7 +1067,61 @@ export function ProfilePage({ username }: { username: string }) {
               )}
             </div>
           )}
+
+          {/* TAB: LISTS */}
+          {activeTab === "lists" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-[#242c34] pb-2">
+                <h2 className="text-xs font-bold tracking-widest uppercase text-[#89a]">
+                  CURATED LISTS ({displayLists.length})
+                </h2>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setCreateListOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium px-3 py-1.5 text-xs transition"
+                  >
+                    <span>+ New List</span>
+                  </button>
+                )}
+              </div>
+
+              {listsLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-56 rounded-2xl bg-white/5 animate-pulse" />
+                  ))}
+                </div>
+              ) : displayLists.length === 0 ? (
+                <div className="py-16 text-center space-y-3">
+                  <p className="text-sm text-[#89a]">
+                    {isOwner
+                      ? "You haven’t created any custom lists yet."
+                      : `${profile?.display_name || username} hasn’t created any public lists yet.`}
+                  </p>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => setCreateListOpen(true)}
+                      className="text-xs text-purple-400 hover:text-purple-300 font-semibold transition underline"
+                    >
+                      Create your first list
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {displayLists.map((l) => (
+                    <ListCard key={l.id} list={l} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Create List Modal */}
+        <CreateListModal open={createListOpen} onClose={() => setCreateListOpen(false)} />
 
         {/* QR Code Modal */}
         {isQRModalOpen && (
